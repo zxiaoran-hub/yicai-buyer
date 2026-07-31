@@ -42,6 +42,7 @@ const auth = {
     const data = await supabase.signIn(email, password);
     if (data.access_token) {
       localStorage.setItem('yicai_buyer_token', data.access_token);
+      localStorage.setItem('yicai_buyer_refresh', data.refresh_token);
     }
     appState.user = data.user;
     await this.loadPermissions();
@@ -62,6 +63,7 @@ const auth = {
       // 登录获取token
       const signInData = await supabase.signIn(email, password);
       localStorage.setItem('yicai_buyer_token', signInData.access_token);
+      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
       appState.user = signInData.user;
 
       // 调用RPC创建公司及管理员角色（需要后端有对应的RPC）
@@ -131,6 +133,7 @@ const auth = {
       // 登录
       const signInData = await supabase.signIn(email, password);
       localStorage.setItem('yicai_buyer_token', signInData.access_token);
+      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
       appState.user = signInData.user;
       appState.isIndividual = true;
 
@@ -144,6 +147,7 @@ const auth = {
       if (signUpData.user) {
         const signInData = await supabase.signIn(email, password);
         localStorage.setItem('yicai_buyer_token', signInData.access_token);
+      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
         appState.user = signInData.user;
         appState.isIndividual = true;
 
@@ -293,6 +297,7 @@ const auth = {
       console.warn('Sign out error:', e);
     }
     localStorage.removeItem('yicai_buyer_token');
+    localStorage.removeItem('yicai_buyer_refresh');
     appState.user = null;
     appState.userPermissions = null;
     window.userPermissions = null;
