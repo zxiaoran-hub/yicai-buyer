@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>异采 · 品牌方端</title>
   <link rel="stylesheet" href="css/style.css">
-  <!-- Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -42,11 +40,11 @@
       <h3>企业登录</h3>
       <div class="form-group">
         <label>邮箱</label>
-        <input type="email" name="email" class="form-input" placeholder="请输入注册邮箱" required>
+        <input type="email" id="login-email" name="email" class="form-input" placeholder="请输入注册邮箱" required>
       </div>
       <div class="form-group">
         <label>密码</label>
-        <input type="password" name="password" class="form-input" placeholder="请输入密码" required>
+        <input type="password" id="login-password" name="password" class="form-input" placeholder="请输入密码" required>
       </div>
       <button type="submit" class="btn btn-primary">登录</button>
       <div class="login-switch">
@@ -87,11 +85,11 @@
       <h3>个人用户登录</h3>
       <div class="form-group">
         <label>邮箱</label>
-        <input type="email" name="email" class="form-input" placeholder="请输入个人注册邮箱" required>
+        <input type="email" id="login-individual-email" name="email" class="form-input" placeholder="请输入个人注册邮箱" required>
       </div>
       <div class="form-group">
         <label>密码</label>
-        <input type="password" name="password" class="form-input" placeholder="请输入密码" required>
+        <input type="password" id="login-individual-password" name="password" class="form-input" placeholder="请输入密码" required>
       </div>
       <button type="submit" class="btn btn-primary">登录</button>
       <div class="login-switch">
@@ -103,15 +101,19 @@
       <h3>个人用户注册</h3>
       <div class="form-group">
         <label>姓名 *</label>
-        <input type="text" name="name" class="form-input" placeholder="请输入您的姓名" required>
+        <input type="text" id="register-individual-name" name="name" class="form-input" placeholder="请输入您的姓名" required>
       </div>
       <div class="form-group">
         <label>邮箱 *</label>
-        <input type="email" name="email" class="form-input" placeholder="用于登录的邮箱" required>
+        <input type="email" id="register-individual-email" name="email" class="form-input" placeholder="用于登录的邮箱" required>
       </div>
       <div class="form-group">
         <label>密码 *</label>
-        <input type="password" name="password" class="form-input" placeholder="至少6位" required minlength="6">
+        <input type="password" id="register-individual-password" name="password" class="form-input" placeholder="至少6位" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>确认密码 *</label>
+        <input type="password" id="register-individual-confirm-password" name="confirm_password" class="form-input" placeholder="再次输入密码" required minlength="6">
       </div>
       <button type="submit" class="btn btn-primary">注册</button>
       <div class="login-switch">
@@ -128,7 +130,7 @@
     <h1>异采 · 品牌方</h1>
     <div class="header-right">
       <span class="header-user-badge" id="header-role-badge">-</span>
-      <span class="header-logout" onclick="if(confirm('确定退出登录？')) auth.signOut()">退出</span>
+      <span class="header-logout" onclick="if(confirm('确定退出登录？')) logout()">退出</span>
     </div>
   </div>
 
@@ -288,7 +290,7 @@
       <div class="info-row"><span class="info-label">平台</span><span class="info-value">异采 YiCai</span></div>
       <div class="info-row"><span class="info-label">版本</span><span class="info-value">v1.0</span></div>
       <div class="info-row"><span class="info-label">终端</span><span class="info-value">品牌方端 Web App</span></div>
-      <button class="btn btn-outline btn-block mt-16" style="color:var(--danger);border-color:var(--danger);" onclick="if(confirm('确定退出登录？')) auth.signOut()">退出登录</button>
+      <button class="btn btn-outline btn-block mt-16" style="color:var(--danger);border-color:var(--danger);" onclick="if(confirm('确定退出登录？')) logout()">退出登录</button>
     </div>
   </div>
 

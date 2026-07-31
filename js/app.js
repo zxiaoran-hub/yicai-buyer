@@ -1,663 +1,491 @@
-/**
- * 异采 YiCai 品牌方端 - 主应用入口
- * 负责: Supabase初始化、认证、RBAC、路由、公共方法
- */
+// 异采 YiCai 品牌方端 - 主应用
+// 不依赖 Supabase JS SDK，全部使用 config.js 中的自定义 supabase REST 封装
 
-// ===== Supabase 初始化 =====
-const { createClient } = window.supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ==================== 状态 ====================
+let currentUser = null;
+let currentPermissions = [];
+let currentMenuPermissions = {};
+let currentButtonPermissions = {};
 
-// ===== 全局状态 =====
-const appState = {
-  user: null,
-  userPermissions: null,  // RBAC 权限数据
-  companyId: null,
-  isIndividual: false,     // 是否个人用户
-  isCompanyAdmin: false,   // 是否公司管理员
-  isPlatformAdmin: false,  // 是否平台管理员
-  roles: [],
-  permissions: [],
-  currentPage: 'dashboard'
-};
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', () => {
+  checkSession();
+  bindEvents();
+});
 
-// 全局权限对象（供各模块使用）
-window.userPermissions = null;
-
-// ===== 状态映射 =====
-const STATUS_MAP = {
-  open: { label: '询价中', color: 'success' },
-  closed: { label: '已关闭', color: 'info' },
-  awarded: { label: '已定标', color: 'gold' },
-  pending: { label: '待确认', color: 'warning' },
-  confirmed: { label: '已确认', color: 'info' },
-  producing: { label: '生产中', color: 'info' },
-  completed: { label: '已完成', color: 'success' },
-  cancelled: { label: '已取消', color: 'danger' }
-};
-
-// ===== 认证模块 =====
-const auth = {
-  // 公司用户登录
-  async signIn(email, password) {
-    const data = await supabase.signIn(email, password);
-    if (data.access_token) {
-      localStorage.setItem('yicai_buyer_token', data.access_token);
-      localStorage.setItem('yicai_buyer_refresh', data.refresh_token);
-    }
-    appState.user = data.user;
-    await this.loadPermissions();
-    return data;
-  },
-
-  // 个人用户登录
-  async signInIndividual(email, password) {
-    return this.signIn(email, password);
-  },
-
-  // 公司用户注册（通过 supabase.auth.signUp + RPC）
-  async registerCompany(email, password, companyName, adminName) {
-    // 先注册 auth
-    const signUpData = await supabase.signUp(email, password);
-
-    if (signUpData.user) {
-      // 登录获取token
-      const signInData = await supabase.signIn(email, password);
-      localStorage.setItem('yicai_buyer_token', signInData.access_token);
-      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
-      appState.user = signInData.user;
-
-      // 调用RPC创建公司及管理员角色（需要后端有对应的RPC）
-      try {
-        await supabase.rpc('register_company_buyer', {
-          p_email: email,
-          p_password: password,
-          p_company_name: companyName,
-          p_admin_name: adminName
-        });
-      } catch (e) {
-        console.warn('Company registration RPC not available, trying direct insert...');
-        // 回退方案：直接插入数据
-        await this.fallbackCompanyRegister(email, companyName, adminName);
-      }
-
-      await this.loadPermissions();
-    }
-    return signUpData;
-  },
-
-  // 回退方案：直接通过REST API创建公司
-  async fallbackCompanyRegister(email, companyName, adminName) {
+function checkSession() {
+  const savedUser = localStorage.getItem('yicai_buyer_user');
+  const token = localStorage.getItem('yicai_buyer_token');
+  if (savedUser && token) {
     try {
-      // 创建公司记录
-      const companyResult = await supabase.insert('companies', {
-        name: companyName,
-        type: 'buyer',
-        status: 'active'
-      });
-
-      if (companyResult && companyResult[0]) {
-        const companyId = companyResult[0].id;
-
-        // 获取系统管理员角色
-        const roles = await supabase.query('roles', {
-          select: 'id',
-          filter: { is_system: true, company_id: null },
-          like: { name: '%admin%' }
-        });
-
-        // 创建 user_roles 关联
-        if (appState.user) {
-          await supabase.insert('user_roles', {
-            user_id: appState.user.id,
-            company_id: companyId,
-            user_email: email,
-            role_id: roles && roles[0] ? roles[0].id : null
-          });
-        }
-      }
+      currentUser = JSON.parse(savedUser);
+      loadUserPermissions();
     } catch (e) {
-      console.error('Fallback registration error:', e);
+      localStorage.removeItem('yicai_buyer_user');
+      localStorage.removeItem('yicai_buyer_token');
+      localStorage.removeItem('yicai_buyer_refresh');
     }
-  },
-
-  // 个人用户注册
-  async registerIndividual(email, password, name) {
-    try {
-      // 调用RPC注册个人买家
-      const result = await supabase.rpc('register_individual_buyer', {
-        p_email: email,
-        p_password: password,
-        p_name: name
-      });
-
-      // 登录
-      const signInData = await supabase.signIn(email, password);
-      localStorage.setItem('yicai_buyer_token', signInData.access_token);
-      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
-      appState.user = signInData.user;
-      appState.isIndividual = true;
-
-      await this.loadPermissions();
-      return result;
-    } catch (e) {
-      // RPC不可用时回退
-      console.warn('Individual registration RPC not available, trying direct...');
-      const signUpData = await supabase.signUp(email, password);
-
-      if (signUpData.user) {
-        const signInData = await supabase.signIn(email, password);
-        localStorage.setItem('yicai_buyer_token', signInData.access_token);
-      localStorage.setItem('yicai_buyer_refresh', signInData.refresh_token);
-        appState.user = signInData.user;
-        appState.isIndividual = true;
-
-        // 尝试关联默认角色
-        try {
-          const defaultRole = await supabase.query('roles', {
-            select: 'id',
-            filter: { is_system: true },
-            like: { name: '%individual%' }
-          });
-
-          if (defaultRole && defaultRole[0]) {
-            await supabase.insert('user_roles', {
-              user_id: appState.user.id,
-              company_id: null,
-              user_email: email,
-              role_id: defaultRole[0].id
-            });
-          }
-        } catch (err) {
-          console.warn('Could not assign default role:', err);
-        }
-
-        await this.loadPermissions();
-      }
-      return signUpData;
-    }
-  },
-
-  // 加载权限
-  async loadPermissions() {
-    if (!appState.user) return;
-
-    try {
-      const result = await supabase.rpc('get_user_permissions', {
-        p_user_id: appState.user.id
-      });
-
-      if (result && result[0]) {
-        const perms = result[0];
-        appState.userPermissions = perms;
-        window.userPermissions = perms;
-        appState.companyId = perms.company_id;
-        appState.isCompanyAdmin = perms.is_company_admin || false;
-        appState.isPlatformAdmin = perms.is_platform_admin || false;
-        appState.roles = perms.roles || [];
-        appState.permissions = perms.permissions || [];
-        appState.isIndividual = !perms.company_id;
-      }
-    } catch (e) {
-      console.warn('Failed to load permissions via RPC, trying alternative...');
-      await this.loadPermissionsFallback();
-    }
-  },
-
-  // 回退方案：直接查询权限
-  async loadPermissionsFallback() {
-    try {
-      const userRoles = await supabase.query('user_roles', {
-        select: 'id,role_id,company_id,user_email',
-        filter: { user_id: appState.user.id }
-      });
-
-      if (userRoles && userRoles[0]) {
-        const ur = userRoles[0];
-        appState.companyId = ur.company_id;
-        appState.isIndividual = !ur.company_id;
-
-        if (ur.role_id) {
-          const rolePerms = await supabase.query('role_permissions', {
-            select: '*',
-            filter: { role_id: ur.role_id }
-          });
-
-          const permIds = (rolePerms || []).map(rp => rp.permission_id);
-          if (permIds.length > 0) {
-            const perms = await supabase.query('permissions', {
-              select: '*',
-              in: { id: permIds.join(',') }
-            });
-            appState.permissions = perms || [];
-          }
-        }
-
-        // 获取角色名
-        if (ur.role_id) {
-          const roles = await supabase.query('roles', {
-            select: '*',
-            filter: { id: ur.role_id }
-          });
-          appState.roles = roles || [];
-          if (roles && roles[0]) {
-            appState.isCompanyAdmin = roles[0].name.toLowerCase().includes('admin');
-          }
-        }
-
-        window.userPermissions = {
-          user_id: appState.user.id,
-          company_id: appState.companyId,
-          is_company_admin: appState.isCompanyAdmin,
-          is_platform_admin: appState.isPlatformAdmin,
-          roles: appState.roles,
-          permissions: appState.permissions
-        };
-      }
-    } catch (e) {
-      console.error('Fallback permission load error:', e);
-    }
-  },
-
-  // 获取company_id（通过RPC或备用方式）
-  async getCompanyId() {
-    if (appState.companyId) return appState.companyId;
-    try {
-      const result = await supabase.rpc('get_user_company_id');
-      if (result) {
-        appState.companyId = result;
-        return result;
-      }
-    } catch (e) {
-      // 从user_roles中获取
-      const userRoles = await supabase.query('user_roles', {
-        select: 'company_id',
-        filter: { user_id: appState.user.id }
-      });
-      if (userRoles && userRoles[0]) {
-        appState.companyId = userRoles[0].company_id;
-        return userRoles[0].company_id;
-      }
-    }
-    return null;
-  },
-
-  // 检查是否有某权限
-  hasPermission(resource, action) {
-    if (appState.isPlatformAdmin || appState.isCompanyAdmin) return true;
-    return appState.permissions.some(p =>
-      p.resource === resource && p.action === action && p.effect === 'allow'
-    );
-  },
-
-  // 登出
-  async signOut() {
-    try {
-      await db.auth.signOut();
-    } catch (e) {
-      console.warn('Sign out error:', e);
-    }
-    localStorage.removeItem('yicai_buyer_token');
-    localStorage.removeItem('yicai_buyer_refresh');
-    appState.user = null;
-    appState.userPermissions = null;
-    window.userPermissions = null;
-    appState.companyId = null;
-    appState.isIndividual = false;
-    appState.isCompanyAdmin = false;
-    appState.isPlatformAdmin = false;
-    appState.roles = [];
-    appState.permissions = [];
-    showLogin();
-  },
-
-  // 检查登录状态
-  async checkSession() {
-    const { data: { session } } = await db.auth.getSession();
-    if (session) {
-      appState.user = session.user;
-      await this.loadPermissions();
-      return true;
-    }
-    return false;
-  }
-};
-
-// ===== 路由 =====
-function switchPage(page) {
-  // 权限检查：管理页面仅管理员可见
-  if (page === 'admin' && !appState.isCompanyAdmin && !appState.isPlatformAdmin) {
-    showToast('无权访问管理页面');
-    return;
-  }
-
-  appState.currentPage = page;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-
-  const pageEl = document.getElementById(`page-${page}`);
-  const tabEl = document.querySelector(`.tab-item[data-page="${page}"]`);
-  if (pageEl) pageEl.classList.add('active');
-  if (tabEl) tabEl.classList.add('active');
-
-  // 触发页面数据加载
-  switch (page) {
-    case 'dashboard': dashboard.load(); break;
-    case 'inquiries': inquiries.load(); break;
-    case 'quotes': quotes.load(); break;
-    case 'orders': orders.load(); break;
-    case 'suppliers': suppliers.load(); break;
-    case 'admin': admin.load(); break;
-    case 'profile': profile.load(); break;
   }
 }
 
-// ===== UI 工具 =====
+function bindEvents() {
+  // 企业登录表单
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleCompanyLogin();
+    });
+  }
+
+  // 企业注册表单
+  const registerCompanyForm = document.getElementById('register-company-form');
+  if (registerCompanyForm) {
+    registerCompanyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleCompanyRegister();
+    });
+  }
+
+  // 个人登录表单
+  const loginIndividualForm = document.getElementById('login-individual-form');
+  if (loginIndividualForm) {
+    loginIndividualForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleIndividualLogin();
+    });
+  }
+
+  // 个人注册表单
+  const registerIndividualForm = document.getElementById('register-individual-form');
+  if (registerIndividualForm) {
+    registerIndividualForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleIndividualRegister();
+    });
+  }
+
+  // 身份选择卡片
+  document.querySelectorAll('[onclick^="selectLoginType"]').forEach(el => {
+    // already handled by inline onclick
+  });
+
+  // 密码显示/隐藏
+  document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function() {
+      const input = this.previousElementSibling;
+      if (input && input.type === 'password') {
+        input.type = 'text';
+        this.textContent = '🙈';
+      } else if (input) {
+        input.type = 'password';
+        this.textContent = '👁️';
+      }
+    });
+  });
+
+  // 登录/注册切换链接
+  document.querySelectorAll('[onclick^="toggleForm"]').forEach(el => {
+    // already handled by inline onclick
+  });
+
+  // Tab bar navigation
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    if (!tab.onclick) {
+      tab.addEventListener('click', function() {
+        const page = this.dataset.page;
+        if (page) switchPage(page);
+      });
+    }
+  });
+
+  // 退出登录
+  document.querySelectorAll('[onclick*="logout"]').forEach(el => {
+    // already handled by inline onclick
+  });
+}
+
+// ==================== 身份选择（两步式登录） ====================
+function selectLoginType(type) {
+  document.getElementById('login-step-choice').style.display = 'none';
+  if (type === 'company') {
+    document.getElementById('login-step-company').style.display = 'block';
+    document.getElementById('login-step-individual').style.display = 'none';
+  } else {
+    document.getElementById('login-step-company').style.display = 'none';
+    document.getElementById('login-step-individual').style.display = 'block';
+  }
+}
+
+function backToChoice() {
+  document.getElementById('login-step-choice').style.display = 'block';
+  document.getElementById('login-step-company').style.display = 'none';
+  document.getElementById('login-step-individual').style.display = 'none';
+}
+
+function toggleForm(type, formType) {
+  // type: 'company' or 'individual'
+  // formType: 'login' or 'register'
+  const container = document.getElementById('login-step-' + type);
+  if (!container) return;
+  const loginForm = container.querySelector('form[id^="login"]');
+  const registerForm = container.querySelector('form[id^="register"]');
+  if (formType === 'register') {
+    if (loginForm) loginForm.style.display = 'none';
+    if (registerForm) registerForm.style.display = 'block';
+  } else {
+    if (loginForm) loginForm.style.display = 'block';
+    if (registerForm) registerForm.style.display = 'none';
+  }
+}
+
+// HTML 中 onclick 使用的函数
+function toggleAuthForm(mode) {
+  switch (mode) {
+    case 'register-company':
+      toggleForm('company', 'register');
+      break;
+    case 'login':
+      toggleForm('company', 'login');
+      break;
+    case 'register-individual':
+      toggleForm('individual', 'register');
+      break;
+    case 'login-individual':
+      toggleForm('individual', 'login');
+      break;
+  }
+}
+
+// ==================== 认证 ====================
+async function handleCompanyLogin() {
+  const email = document.getElementById('login-email')?.value?.trim();
+  const password = document.getElementById('login-password')?.value;
+  if (!email || !password) {
+    showToast('请输入邮箱和密码');
+    return;
+  }
+  await doLogin(email, password);
+}
+
+async function handleIndividualLogin() {
+  const email = document.getElementById('login-individual-email')?.value?.trim();
+  const password = document.getElementById('login-individual-password')?.value;
+  if (!email || !password) {
+    showToast('请输入邮箱和密码');
+    return;
+  }
+  await doLogin(email, password);
+}
+
+async function doLogin(email, password) {
+  try {
+    const result = await supabase.signIn(email, password);
+    if (result.access_token) {
+      localStorage.setItem('yicai_buyer_token', result.access_token);
+      if (result.refresh_token) {
+        localStorage.setItem('yicai_buyer_refresh', result.refresh_token);
+      }
+      currentUser = {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.user_metadata?.name || email.split('@')[0],
+        role: 'buyer'
+      };
+      localStorage.setItem('yicai_buyer_user', JSON.stringify(currentUser));
+      await loadUserPermissions();
+    } else {
+      showToast('登录失败：未返回有效凭证');
+    }
+  } catch (err) {
+    showToast('登录失败：' + (err.message || '邮箱或密码错误'));
+  }
+}
+
+async function handleCompanyRegister() {
+  showToast('企业注册请联系平台管理员开通');
+}
+
+async function handleIndividualRegister() {
+  const name = document.getElementById('register-individual-name')?.value?.trim();
+  const email = document.getElementById('register-individual-email')?.value?.trim();
+  const password = document.getElementById('register-individual-password')?.value;
+  const confirmPassword = document.getElementById('register-individual-confirm-password')?.value;
+
+  if (!name || !email || !password || !confirmPassword) {
+    showToast('请填写所有字段');
+    return;
+  }
+  if (password !== confirmPassword) {
+    showToast('两次输入的密码不一致');
+    return;
+  }
+  if (password.length < 6) {
+    showToast('密码至少6位');
+    return;
+  }
+
+  try {
+    // 使用 RPC 一步完成注册 + 写入 buyer_profiles
+    const rpcResult = await supabase.rpc('register_individual_buyer', {
+      p_email: email,
+      p_password: password,
+      p_name: name
+    });
+
+    if (rpcResult && rpcResult.success) {
+      showToast('注册成功，正在登录...');
+      await doLogin(email, password);
+    } else {
+      showToast(rpcResult?.error || '注册失败');
+    }
+  } catch (err) {
+    showToast('注册失败：' + (err.message || '请稍后重试'));
+  }
+}
+
+function logout() {
+  currentUser = null;
+  currentPermissions = [];
+  currentMenuPermissions = {};
+  currentButtonPermissions = {};
+  localStorage.removeItem('yicai_buyer_user');
+  localStorage.removeItem('yicai_buyer_token');
+  localStorage.removeItem('yicai_buyer_refresh');
+  showLogin();
+}
+
+// ==================== 权限加载 ====================
+async function loadUserPermissions() {
+  try {
+    const result = await supabase.rpc('get_user_permissions');
+
+    if (result && result.permissions) {
+      currentPermissions = result.permissions;
+      currentUser.companyId = result.company_id;
+      currentUser.companyName = result.company_name;
+      currentUser.roles = result.roles || [];
+      currentUser.isPlatformAdmin = result.is_platform_admin || false;
+    } else {
+      currentPermissions = [];
+    }
+
+    buildPermissionMaps();
+    applyPermissionsToUI();
+    showApp();
+
+    // 加载首页数据
+    loadDashboard();
+  } catch (e) {
+    console.warn('Load permissions failed:', e);
+    currentPermissions = [];
+    buildPermissionMaps();
+    applyPermissionsToUI();
+    showApp();
+    loadDashboard();
+  }
+}
+
+function buildPermissionMaps() {
+  currentMenuPermissions = {};
+  currentButtonPermissions = {};
+
+  for (const perm of currentPermissions) {
+    if (perm.effect !== 'allow') continue;
+    if (perm.menu_path) {
+      currentMenuPermissions[perm.menu_path] = true;
+    }
+    if (perm.button_key) {
+      currentButtonPermissions[perm.button_key] = true;
+    }
+  }
+}
+
+function hasMenuPermission(menuPath) {
+  return currentMenuPermissions[menuPath] === true;
+}
+
+function hasButtonPermission(buttonKey) {
+  return currentButtonPermissions[buttonKey] === true;
+}
+
+function applyPermissionsToUI() {
+  // Tab bar 显隐
+  const tabAdmin = document.getElementById('tab-admin');
+  if (tabAdmin) {
+    tabAdmin.style.display = hasMenuPermission('page-admin') ? '' : 'none';
+  }
+
+  // 用户信息
+  updateProfileInfo();
+}
+
+function updateProfileInfo() {
+  if (!currentUser) return;
+  const nameEl = document.getElementById('profile-user-name');
+  if (nameEl) nameEl.textContent = currentUser.name || currentUser.email;
+
+  const roleEl = document.getElementById('profile-user-role');
+  if (roleEl) roleEl.textContent = currentUser.roles?.join(', ') || '普通用户';
+
+  const avatarEl = document.getElementById('profile-avatar-text');
+  if (avatarEl) avatarEl.textContent = (currentUser.name || currentUser.email || '?')[0];
+
+  const companyEl = document.getElementById('profile-company-info');
+  if (companyEl) companyEl.textContent = currentUser.companyName || '个人用户';
+
+  const infoName = document.getElementById('info-name');
+  if (infoName) infoName.textContent = currentUser.name || '-';
+
+  const infoEmail = document.getElementById('info-email');
+  if (infoEmail) infoEmail.textContent = currentUser.email || '-';
+
+  const infoCompany = document.getElementById('info-company');
+  if (infoCompany) infoCompany.textContent = currentUser.companyName || '个人用户';
+
+  const infoRole = document.getElementById('info-role');
+  if (infoRole) infoRole.textContent = currentUser.roles?.join(', ') || '普通用户';
+
+  const infoUserType = document.getElementById('info-user-type');
+  if (infoUserType) infoUserType.textContent = currentUser.companyId ? '企业用户' : '个人用户';
+
+  // 权限列表
+  const permList = document.getElementById('permissions-list');
+  if (permList) {
+    if (currentPermissions.length === 0) {
+      permList.innerHTML = '<div style="color:#999;padding:16px 0;">暂无权限数据</div>';
+    } else {
+      permList.innerHTML = currentPermissions.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+          <div>
+            <div style="font-weight:500;">${p.display_name || p.resource + ':' + p.action}</div>
+            <div style="font-size:12px;color:#999;">${p.menu_path || p.button_key || ''}</div>
+          </div>
+          <span style="font-size:12px;color:${p.effect === 'allow' ? '#52c41a' : '#ff4d4f'}">${p.effect}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Header role badge
+  const roleBadge = document.getElementById('header-role-badge');
+  if (roleBadge) {
+    roleBadge.textContent = currentUser.companyId ? '企业' : '个人';
+  }
+
+  // Dashboard greeting
+  const greeting = document.getElementById('user-greeting');
+  if (greeting) {
+    greeting.textContent = `你好，${currentUser.name || currentUser.email}`;
+  }
+}
+
+// ==================== 页面显示 ====================
 function showLogin() {
-  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-page').style.display = '';
   document.getElementById('main-app').style.display = 'none';
   // 重置到身份选择页
-  document.getElementById('login-step-choice').style.display = 'block';
+  document.getElementById('login-step-choice').style.display = '';
   document.getElementById('login-step-company').style.display = 'none';
   document.getElementById('login-step-individual').style.display = 'none';
 }
 
 function showApp() {
   document.getElementById('login-page').style.display = 'none';
-  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('main-app').style.display = '';
+}
 
-  // 设置头部角色标签
-  const roleNames = appState.roles.map(r => r.name).join('、') || '用户';
-  document.getElementById('header-role-badge').textContent = roleNames;
+function switchPage(page) {
+  // 切换页面
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
 
-  // 管理员Tab显示控制
-  const adminTab = document.getElementById('tab-admin');
-  const adminPage = document.getElementById('page-admin');
-  if (appState.isCompanyAdmin || appState.isPlatformAdmin) {
-    if (adminTab) adminTab.style.display = '';
-    if (adminPage) adminPage.style.display = '';
-  } else {
-    if (adminTab) adminTab.style.display = 'none';
-    if (adminPage) adminPage.style.display = 'none';
+  // 切换 tab 高亮
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  const activeTab = document.querySelector(`.tab-item[data-page="${page}"]`);
+  if (activeTab) activeTab.classList.add('active');
+
+  // 加载对应数据
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'suppliers') loadSuppliers();
+}
+
+// ==================== 数据加载 ====================
+async function loadDashboard() {
+  // 简单的统计，后续可以扩展
+  const statInquiries = document.getElementById('stat-inquiries');
+  const statOrders = document.getElementById('stat-orders');
+  const statSuppliers = document.getElementById('stat-suppliers');
+
+  try {
+    const countI = await supabase.getCount('inquiries', { buyer_id: currentUser?.id });
+    if (statInquiries) statInquiries.textContent = countI;
+  } catch { if (statInquiries) statInquiries.textContent = '0'; }
+
+  try {
+    const countO = await supabase.getCount('orders', { buyer_id: currentUser?.id });
+    if (statOrders) statOrders.textContent = countO;
+  } catch { if (statOrders) statOrders.textContent = '0'; }
+
+  try {
+    const countS = await supabase.getCount('suppliers', { status: 'active' });
+    if (statSuppliers) statSuppliers.textContent = countS;
+  } catch { if (statSuppliers) statSuppliers.textContent = '0'; }
+}
+
+async function loadSuppliers() {
+  try {
+    const suppliers = await supabase.query({
+      table: 'suppliers',
+      select: 'id,company_name,short_name,industry,status',
+      filter: { status: 'active' },
+      order: 'company_name'
+    });
+    renderSuppliers(suppliers);
+  } catch (e) {
+    console.warn('Load suppliers failed:', e);
+    renderSuppliers([]);
+  }
+}
+
+function renderSuppliers(suppliers) {
+  const list = document.getElementById('suppliers-list');
+  if (!list) return;
+
+  if (suppliers.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">暂无供应商</div>';
+    return;
   }
 
-  switchPage('dashboard');
+  list.innerHTML = suppliers.map(s => `
+    <div class="supplier-card" onclick="showSupplierDetail(${s.id})">
+      <div style="font-weight:600;">${s.company_name || s.short_name || '未命名'}</div>
+      <div style="font-size:13px;color:#666;margin-top:4px;">${s.industry || ''}</div>
+    </div>
+  `).join('');
 }
 
-function showToast(msg, duration = 2500) {
+function showSupplierDetail(id) {
+  showToast('供应商详情功能开发中');
+}
+
+// ==================== Toast ====================
+function showToast(msg) {
   const toast = document.getElementById('toast');
+  if (!toast) return;
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), duration);
+  setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
+// ==================== Modal ====================
 function showModal(id) {
-  document.getElementById(id).classList.add('active');
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'flex';
 }
 
 function hideModal(id) {
-  document.getElementById(id).classList.remove('active');
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'none';
 }
-
-function formatMoney(n) {
-  if (!n && n !== 0) return '¥0';
-  return '¥' + Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function formatDate(d) {
-  if (!d) return '-';
-  const date = new Date(d);
-  return `${date.getMonth()+1}/${date.getDate()}`;
-}
-
-function formatDateTime(d) {
-  if (!d) return '-';
-  const date = new Date(d);
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-}
-
-function getStatusLabel(status) {
-  return STATUS_MAP[status]?.label || status;
-}
-
-function getStatusClass(status) {
-  return `status-${status}`;
-}
-
-// ===== 权限检查辅助 =====
-function hasMenuAccess(menuPath) {
-  if (appState.isPlatformAdmin || appState.isCompanyAdmin) return true;
-  return appState.permissions.some(p => p.menu_path === menuPath);
-}
-
-function hasButtonAccess(buttonKey) {
-  if (appState.isPlatformAdmin || appState.isCompanyAdmin) return true;
-  return appState.permissions.some(p => p.button_key === buttonKey);
-}
-
-// ===== Dashboard =====
-const dashboard = {
-  async load() {
-    const userName = appState.user?.email?.split('@')[0] || '用户';
-    document.getElementById('user-greeting').textContent = `你好，${userName} 👋`;
-
-    try {
-      // 加载统计数据
-      const companyId = appState.companyId;
-
-      // 询价统计
-      const inquiryParams = companyId ? { filter: { company_id: companyId } } : { filter: { created_by: appState.user?.id } };
-      const inquiryCount = await supabase.getCount('buyer_inquiries', inquiryParams.filter || {});
-      document.getElementById('stat-inquiries').textContent = inquiryCount || 0;
-
-      // 报价统计
-      let quoteCount = 0;
-      if (companyId) {
-        quoteCount = await supabase.getCount('supplier_quotes', { inquiry_company_id: companyId });
-      }
-      document.getElementById('stat-quotes-received').textContent = quoteCount || 0;
-
-      // 订单统计
-      const orderFilter = companyId ? { company_id: companyId } : { buyer_user_id: appState.user?.id };
-      const orderCount = await supabase.getCount('buyer_orders', orderFilter);
-      document.getElementById('stat-orders').textContent = orderCount || 0;
-
-      // 供应商数
-      const supplierCount = await supabase.getCount('suppliers', { status: 'active' });
-      document.getElementById('stat-suppliers').textContent = supplierCount || 0;
-
-      // 最近询价
-      const recentInquiries = await supabase.query('buyer_inquiries', {
-        select: 'id,title,status,created_at',
-        filter: companyId ? { company_id: companyId } : { created_by: appState.user?.id },
-        order: 'created_at.desc',
-        limit: 3
-      });
-
-      const recentInqEl = document.getElementById('recent-inquiries');
-      if (recentInquiries && recentInquiries.length > 0) {
-        recentInqEl.innerHTML = recentInquiries.map(i => `
-          <div class="inquiry-card ${getStatusClass(i.status)}" style="margin-bottom:8px;cursor:pointer;" onclick="switchPage('inquiries')">
-            <div class="inquiry-header">
-              <div class="inquiry-title" style="font-size:14px;">${i.title || '未命名询价'}</div>
-              <span class="inquiry-badge">${getStatusLabel(i.status)}</span>
-            </div>
-            <div style="font-size:12px;color:var(--text-secondary);">${formatDateTime(i.created_at)}</div>
-          </div>
-        `).join('');
-      } else {
-        recentInqEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">暂无询价</div></div>';
-      }
-
-      // 最近订单
-      const recentOrders = await supabase.query('buyer_orders', {
-        select: 'id,product_name,status,created_at',
-        filter: orderFilter,
-        order: 'created_at.desc',
-        limit: 3
-      });
-
-      const recentOrdEl = document.getElementById('recent-orders');
-      if (recentOrders && recentOrders.length > 0) {
-        recentOrdEl.innerHTML = recentOrders.map(o => `
-          <div class="order-card ${getStatusClass(o.status)}" style="margin-bottom:8px;cursor:pointer;" onclick="switchPage('orders')">
-            <div class="order-header">
-              <div class="order-product" style="font-size:14px;">${o.product_name || '未命名'}</div>
-              <span class="order-status">${getStatusLabel(o.status)}</span>
-            </div>
-            <div style="font-size:12px;color:var(--text-secondary);">${formatDateTime(o.created_at)}</div>
-          </div>
-        `).join('');
-      } else {
-        recentOrdEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">暂无订单</div></div>';
-      }
-    } catch (e) {
-      console.error('Dashboard load error:', e);
-    }
-  }
-};
-
-// ===== 身份选择 =====
-function selectLoginType(type) {
-  document.getElementById('login-step-choice').style.display = 'none';
-  if (type === 'company') {
-    document.getElementById('login-step-company').style.display = 'block';
-    // 重置到登录表单
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('register-company-form').style.display = 'none';
-  } else {
-    document.getElementById('login-step-individual').style.display = 'block';
-    document.getElementById('login-individual-form').style.display = 'block';
-    document.getElementById('register-individual-form').style.display = 'none';
-  }
-}
-
-function backToChoice() {
-  document.getElementById('login-step-company').style.display = 'none';
-  document.getElementById('login-step-individual').style.display = 'none';
-  document.getElementById('login-step-choice').style.display = 'block';
-}
-
-// ===== 表单切换 =====
-function toggleAuthForm(form) {
-  // 企业区切换
-  const companyForms = ['login-form', 'register-company-form'];
-  const individualForms = ['login-individual-form', 'register-individual-form'];
-
-  switch (form) {
-    case 'login':
-      companyForms.forEach(f => document.getElementById(f).style.display = 'none');
-      document.getElementById('login-form').style.display = 'block';
-      break;
-    case 'register-company':
-      companyForms.forEach(f => document.getElementById(f).style.display = 'none');
-      document.getElementById('register-company-form').style.display = 'block';
-      break;
-    case 'login-individual':
-      individualForms.forEach(f => document.getElementById(f).style.display = 'none');
-      document.getElementById('login-individual-form').style.display = 'block';
-      break;
-    case 'register-individual':
-      individualForms.forEach(f => document.getElementById(f).style.display = 'none');
-      document.getElementById('register-individual-form').style.display = 'block';
-      break;
-  }
-}
-
-// ===== 初始化 =====
-async function init() {
-  try {
-    const loggedIn = await auth.checkSession();
-    if (loggedIn && appState.user) {
-      showApp();
-    } else {
-      showLogin();
-    }
-  } catch (e) {
-    console.error('Init error:', e);
-    showLogin();
-  }
-}
-
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', init);
-
-// ===== 表单提交处理 =====
-document.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = e.target;
-
-  // 公司用户登录
-  if (form.id === 'login-form') {
-    const email = form.querySelector('[name=email]').value;
-    const password = form.querySelector('[name=password]').value;
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.textContent = '登录中...';
-    try {
-      await auth.signIn(email, password);
-      showApp();
-      showToast('欢迎回来 👋');
-    } catch (err) {
-      showToast('登录失败: ' + err.message);
-    }
-    btn.disabled = false;
-    btn.textContent = '登录';
-  }
-
-  // 公司用户注册
-  if (form.id === 'register-company-form') {
-    const companyName = form.querySelector('[name=company_name]').value;
-    const email = form.querySelector('[name=email]').value;
-    const adminName = form.querySelector('[name=admin_name]').value;
-    const password = form.querySelector('[name=password]').value;
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.textContent = '注册中...';
-    try {
-      await auth.registerCompany(email, password, companyName, adminName);
-      showApp();
-      showToast('企业注册成功 🎉');
-    } catch (err) {
-      showToast('注册失败: ' + err.message);
-    }
-    btn.disabled = false;
-    btn.textContent = '注册企业';
-  }
-
-  // 个人用户登录
-  if (form.id === 'login-individual-form') {
-    const email = form.querySelector('[name=email]').value;
-    const password = form.querySelector('[name=password]').value;
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.textContent = '登录中...';
-    try {
-      await auth.signInIndividual(email, password);
-      showApp();
-      showToast('欢迎回来 👋');
-    } catch (err) {
-      showToast('登录失败: ' + err.message);
-    }
-    btn.disabled = false;
-    btn.textContent = '个人用户登录';
-  }
-
-  // 个人用户注册
-  if (form.id === 'register-individual-form') {
-    const name = form.querySelector('[name=name]').value;
-    const email = form.querySelector('[name=email]').value;
-    const password = form.querySelector('[name=password]').value;
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.textContent = '注册中...';
-    try {
-      await auth.registerIndividual(email, password, name);
-      showApp();
-      showToast('注册成功 🎉');
-    } catch (err) {
-      showToast('注册失败: ' + err.message);
-    }
-    btn.disabled = false;
-    btn.textContent = '注册';
-  }
-});
