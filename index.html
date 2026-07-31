@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>异采 · 品牌方端</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ===== Toast ===== -->
+<div id="toast" class="toast"></div>
+
+<!-- ===== 登录页 ===== -->
+<div id="login-page" class="login-page">
+  <div class="login-logo">异</div>
+  <div class="login-title">异采 YiCai</div>
+  <div class="login-subtitle">品牌采购，智选供应链</div>
+
+  <div class="login-card">
+    <!-- 公司用户登录 -->
+    <form id="login-form">
+      <h3>品牌方登录</h3>
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" name="email" class="form-input" placeholder="请输入注册邮箱" required>
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" name="password" class="form-input" placeholder="请输入密码" required>
+      </div>
+      <button type="submit" class="btn btn-primary">登录</button>
+      <div class="login-switch">
+        还没有公司账号？<a onclick="toggleAuthForm('register-company');">企业注册</a>
+      </div>
+    </form>
+
+    <!-- 公司用户注册 -->
+    <form id="register-company-form" style="display:none;">
+      <h3>企业注册</h3>
+      <div class="form-group">
+        <label>公司名称 *</label>
+        <input type="text" name="company_name" class="form-input" placeholder="请输入公司全称" required>
+      </div>
+      <div class="form-group">
+        <label>管理员邮箱 *</label>
+        <input type="email" name="email" class="form-input" placeholder="管理员登录邮箱" required>
+      </div>
+      <div class="form-group">
+        <label>管理员姓名 *</label>
+        <input type="text" name="admin_name" class="form-input" placeholder="管理员真实姓名" required>
+      </div>
+      <div class="form-group">
+        <label>密码 *</label>
+        <input type="password" name="password" class="form-input" placeholder="至少6位" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary">注册企业</button>
+      <div class="login-switch">
+        已有账号？<a onclick="toggleAuthForm('login');">返回登录</a>
+      </div>
+    </form>
+
+    <!-- 分隔线 -->
+    <div class="login-divider"><span>或</span></div>
+
+    <!-- 个人用户入口 -->
+    <form id="login-individual-form">
+      <h3>个人用户入口</h3>
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" name="email" class="form-input" placeholder="请输入个人注册邮箱" required>
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" name="password" class="form-input" placeholder="请输入密码" required>
+      </div>
+      <button type="submit" class="btn btn-primary">个人用户登录</button>
+      <div class="login-switch">
+        还没有个人账号？<a onclick="toggleAuthForm('register-individual');">个人注册</a>
+      </div>
+    </form>
+
+    <!-- 个人用户注册 -->
+    <form id="register-individual-form" style="display:none;">
+      <h3>个人用户注册</h3>
+      <div class="form-group">
+        <label>姓名 *</label>
+        <input type="text" name="name" class="form-input" placeholder="请输入您的姓名" required>
+      </div>
+      <div class="form-group">
+        <label>邮箱 *</label>
+        <input type="email" name="email" class="form-input" placeholder="用于登录的邮箱" required>
+      </div>
+      <div class="form-group">
+        <label>密码 *</label>
+        <input type="password" name="password" class="form-input" placeholder="至少6位" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary">注册</button>
+      <div class="login-switch">
+        已有账号？<a onclick="toggleAuthForm('login-individual');">返回个人登录</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 主应用（公司用户） ===== -->
+<div id="main-app" style="display:none;">
+  <!-- Header -->
+  <div class="app-header">
+    <h1>异采 · 品牌方</h1>
+    <div class="header-right">
+      <span class="header-user-badge" id="header-role-badge">-</span>
+      <span class="header-logout" onclick="if(confirm('确定退出登录？')) auth.signOut()">退出</span>
+    </div>
+  </div>
+
+  <!-- ===== 工作台 ===== -->
+  <div id="page-dashboard" class="page active">
+    <div style="margin-bottom:16px;">
+      <div id="user-greeting" style="font-size:20px;font-weight:700;color:var(--dark);"></div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">品牌采购，从这里开始</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-inquiries">0</div>
+        <div class="stat-label">我的询价</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-quotes-received">0</div>
+        <div class="stat-label">收到报价</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-orders">0</div>
+        <div class="stat-label">进行中订单</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-suppliers">0</div>
+        <div class="stat-label">合作供应商</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 最近询价</div>
+      <div id="recent-inquiries"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 最近订单</div>
+      <div id="recent-orders"></div>
+    </div>
+  </div>
+
+  <!-- ===== 询价管理 ===== -->
+  <div id="page-inquiries" class="page">
+    <div class="flex-between mb-16">
+      <div class="page-title" style="margin-bottom:0;">询价管理</div>
+      <button class="btn btn-primary btn-sm" onclick="inquiries.showCreateForm()">+ 发布询价</button>
+    </div>
+    <div class="filter-tabs">
+      <div class="filter-tab active" onclick="inquiries.filter('all')">全部</div>
+      <div class="filter-tab" onclick="inquiries.filter('open')">询价中</div>
+      <div class="filter-tab" onclick="inquiries.filter('closed')">已关闭</div>
+      <div class="filter-tab" onclick="inquiries.filter('awarded')">已定标</div>
+    </div>
+    <div id="inquiries-list"></div>
+  </div>
+
+  <!-- ===== 报价管理 ===== -->
+  <div id="page-quotes" class="page">
+    <div class="page-title">报价管理</div>
+    <div class="filter-tabs">
+      <div class="filter-tab active" onclick="quotes.filter('all')">全部</div>
+      <div class="filter-tab" onclick="quotes.filter('pending')">待评审</div>
+      <div class="filter-tab" onclick="quotes.filter('accepted')">已接受</div>
+      <div class="filter-tab" onclick="quotes.filter('rejected')">已拒绝</div>
+    </div>
+    <div id="quotes-list"></div>
+  </div>
+
+  <!-- ===== 订单管理 ===== -->
+  <div id="page-orders" class="page">
+    <div class="flex-between mb-16">
+      <div class="page-title" style="margin-bottom:0;">订单管理</div>
+      <button class="btn btn-primary btn-sm" onclick="orders.showCreateForm()">+ 创建订单</button>
+    </div>
+    <div class="filter-tabs">
+      <div class="filter-tab active" onclick="orders.filter('all')">全部</div>
+      <div class="filter-tab" onclick="orders.filter('pending')">待确认</div>
+      <div class="filter-tab" onclick="orders.filter('confirmed')">已确认</div>
+      <div class="filter-tab" onclick="orders.filter('producing')">生产中</div>
+      <div class="filter-tab" onclick="orders.filter('completed')">已完成</div>
+      <div class="filter-tab" onclick="orders.filter('cancelled')">已取消</div>
+    </div>
+    <div id="orders-list"></div>
+  </div>
+
+  <!-- ===== 供应商浏览 ===== -->
+  <div id="page-suppliers" class="page">
+    <div class="page-title">供应商列表</div>
+    <div class="form-group">
+      <input type="text" id="supplier-search" class="form-input" placeholder="搜索供应商名称..." oninput="suppliers.search(this.value)">
+    </div>
+    <div id="suppliers-list"></div>
+  </div>
+
+  <!-- ===== 管理功能（仅管理员可见） ===== -->
+  <div id="page-admin" class="page" style="display:none;">
+    <div class="page-title">系统管理</div>
+
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="admin.switchTab('roles')">角色管理</div>
+      <div class="profile-tab" onclick="admin.switchTab('users')">员工管理</div>
+    </div>
+
+    <!-- 角色管理 -->
+    <div id="admin-tab-roles">
+      <div class="flex-between mb-16">
+        <div style="font-size:15px;font-weight:600;">公司角色</div>
+        <button class="btn btn-primary btn-sm" onclick="admin.showRoleForm()">+ 新建角色</button>
+      </div>
+      <div id="roles-list"></div>
+    </div>
+
+    <!-- 员工管理 -->
+    <div id="admin-tab-users" style="display:none;">
+      <div class="flex-between mb-16">
+        <div style="font-size:15px;font-weight:600;">公司员工</div>
+        <button class="btn btn-primary btn-sm" onclick="admin.showUserForm()">+ 添加员工</button>
+      </div>
+      <div id="users-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== 个人中心 ===== -->
+  <div id="page-profile" class="page">
+    <div class="profile-header">
+      <div class="profile-avatar"><span id="profile-avatar-text">采</span></div>
+      <div class="profile-name" id="profile-user-name">-</div>
+      <div class="profile-role" id="profile-user-role">-</div>
+      <div id="profile-company-info" style="font-size:13px;color:var(--text-secondary);margin-top:8px;">-</div>
+    </div>
+
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="profile.switchTab('info')">账号信息</div>
+      <div class="profile-tab" onclick="profile.switchTab('permissions')">我的权限</div>
+      <div class="profile-tab" onclick="profile.switchTab('settings')">账号设置</div>
+    </div>
+
+    <!-- 账号信息 -->
+    <div id="profile-tab-info" class="profile-section" style="display:block;">
+      <div class="info-row"><span class="info-label">姓名</span><span class="info-value" id="info-name">-</span></div>
+      <div class="info-row"><span class="info-label">邮箱</span><span class="info-value" id="info-email">-</span></div>
+      <div class="info-row"><span class="info-label">公司</span><span class="info-value" id="info-company">-</span></div>
+      <div class="info-row"><span class="info-label">角色</span><span class="info-value" id="info-role">-</span></div>
+      <div class="info-row"><span class="info-label">用户类型</span><span class="info-value" id="info-user-type">-</span></div>
+    </div>
+
+    <!-- 我的权限 -->
+    <div id="profile-tab-permissions" class="profile-section" style="display:none;">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">您当前拥有的功能权限：</div>
+      <div id="permissions-list"></div>
+    </div>
+
+    <!-- 账号设置 -->
+    <div id="profile-tab-settings" class="profile-section" style="display:none;">
+      <h3>🔐 账号安全</h3>
+      <button class="btn btn-outline btn-sm mt-8" onclick="profile.showPasswordChange()">修改密码</button>
+      <h3 class="mt-16">📱 关于</h3>
+      <div class="info-row"><span class="info-label">平台</span><span class="info-value">异采 YiCai</span></div>
+      <div class="info-row"><span class="info-label">版本</span><span class="info-value">v1.0</span></div>
+      <div class="info-row"><span class="info-label">终端</span><span class="info-value">品牌方端 Web App</span></div>
+      <button class="btn btn-outline btn-block mt-16" style="color:var(--danger);border-color:var(--danger);" onclick="if(confirm('确定退出登录？')) auth.signOut()">退出登录</button>
+    </div>
+  </div>
+
+  <!-- ===== 底部Tab ===== -->
+  <div class="tab-bar" id="main-tab-bar">
+    <div class="tab-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">工作台</span>
+    </div>
+    <div class="tab-item" data-page="inquiries" onclick="switchPage('inquiries')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">询价</span>
+    </div>
+    <div class="tab-item" data-page="quotes" onclick="switchPage('quotes')">
+      <span class="tab-icon">💰</span>
+      <span class="tab-label">报价</span>
+    </div>
+    <div class="tab-item" data-page="orders" onclick="switchPage('orders')">
+      <span class="tab-icon">📦</span>
+      <span class="tab-label">订单</span>
+    </div>
+    <div class="tab-item" data-page="suppliers" onclick="switchPage('suppliers')">
+      <span class="tab-icon">🏭</span>
+      <span class="tab-label">供应商</span>
+    </div>
+    <div class="tab-item" data-page="admin" id="tab-admin" onclick="switchPage('admin')" style="display:none;">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">管理</span>
+    </div>
+    <div class="tab-item" data-page="profile" onclick="switchPage('profile')">
+      <span class="tab-icon">👤</span>
+      <span class="tab-label">我的</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 模态框 ===== -->
+
+<!-- 发布询价 -->
+<div id="inquiry-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('inquiry-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="inquiry-form-title">发布询价</div>
+      <button class="modal-close" onclick="hideModal('inquiry-modal')">×</button>
+    </div>
+    <form id="inquiry-form" onsubmit="event.preventDefault(); inquiries.save();">
+      <input type="hidden" id="inquiry-id">
+      <div class="form-group">
+        <label>询价标题 *</label>
+        <input type="text" id="inquiry-title" class="form-input" placeholder="如：定制氨基酸洁面乳5000件" required>
+      </div>
+      <div class="form-group">
+        <label>品类 *</label>
+        <select id="inquiry-category" class="form-select" required>
+          <option value="">选择品类</option>
+          <option value="护肤">护肤</option>
+          <option value="彩妆">彩妆</option>
+          <option value="面膜">面膜</option>
+          <option value="精华">精华</option>
+          <option value="洗护">洗护</option>
+          <option value="防晒">防晒</option>
+          <option value="香氛">香氛</option>
+          <option value="身体护理">身体护理</option>
+          <option value="个护">个护</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>详细描述 *</label>
+        <textarea id="inquiry-description" class="form-input" rows="4" placeholder="请描述您的需求：规格、材质、工艺、包装要求等..." required></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>采购数量 *</label>
+          <input type="number" id="inquiry-quantity" class="form-input" placeholder="5000" required>
+        </div>
+        <div class="form-group">
+          <label>期望单价(元)</label>
+          <input type="number" id="inquiry-target-price" class="form-input" step="0.01" placeholder="目标价">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>期望交货日期</label>
+        <input type="date" id="inquiry-deadline" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>是否公开询价</label>
+        <select id="inquiry-public" class="form-select">
+          <option value="true">公开 - 所有认证供应商可见</option>
+          <option value="false">定向 - 仅指定供应商可见</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">发布询价</button>
+    </form>
+  </div>
+</div>
+
+<!-- 询价详情 -->
+<div id="inquiry-detail-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('inquiry-detail-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">询价详情</div>
+      <button class="modal-close" onclick="hideModal('inquiry-detail-modal')">×</button>
+    </div>
+    <div id="inquiry-detail-content"></div>
+  </div>
+</div>
+
+<!-- 创建订单 -->
+<div id="order-create-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('order-create-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">创建订单</div>
+      <button class="modal-close" onclick="hideModal('order-create-modal')">×</button>
+    </div>
+    <form id="order-form" onsubmit="event.preventDefault(); orders.save();">
+      <div class="form-group">
+        <label>关联询价</label>
+        <select id="order-inquiry-id" class="form-select">
+          <option value="">不关联（手动填写）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>供应商 *</label>
+        <select id="order-supplier-id" class="form-select" required>
+          <option value="">选择供应商</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>产品名称 *</label>
+        <input type="text" id="order-product-name" class="form-input" placeholder="产品名称" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>数量 *</label>
+          <input type="number" id="order-quantity" class="form-input" placeholder="5000" required>
+        </div>
+        <div class="form-group">
+          <label>单价(元) *</label>
+          <input type="number" id="order-unit-price" class="form-input" step="0.01" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>期望交货日期</label>
+        <input type="date" id="order-delivery-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="order-notes" class="form-input" rows="3" placeholder="订单备注..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">提交订单</button>
+    </form>
+  </div>
+</div>
+
+<!-- 订单详情 -->
+<div id="order-detail-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('order-detail-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-order-title">订单详情</div>
+      <button class="modal-close" onclick="hideModal('order-detail-modal')">×</button>
+    </div>
+    <div id="order-detail-content"></div>
+  </div>
+</div>
+
+<!-- 报价对比 -->
+<div id="compare-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('compare-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">报价对比</div>
+      <button class="modal-close" onclick="hideModal('compare-modal')">×</button>
+    </div>
+    <div id="compare-content"></div>
+  </div>
+</div>
+
+<!-- 新建角色 -->
+<div id="role-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('role-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="role-form-title">新建角色</div>
+      <button class="modal-close" onclick="hideModal('role-modal')">×</button>
+    </div>
+    <form id="role-form" onsubmit="event.preventDefault(); admin.saveRole();">
+      <input type="hidden" id="role-id">
+      <div class="form-group">
+        <label>角色名称 *</label>
+        <input type="text" id="role-name" class="form-input" placeholder="如：采购经理" required>
+      </div>
+      <div class="form-group">
+        <label>角色描述</label>
+        <input type="text" id="role-description" class="form-input" placeholder="角色描述">
+      </div>
+      <div class="form-group">
+        <label>数据范围</label>
+        <select id="role-data-scope" class="form-select">
+          <option value="company">公司全部数据</option>
+          <option value="self">仅个人数据</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>权限列表</label>
+        <div id="role-permissions-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">保存角色</button>
+    </form>
+  </div>
+</div>
+
+<!-- 添加员工 -->
+<div id="user-form-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('user-form-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">添加员工</div>
+      <button class="modal-close" onclick="hideModal('user-form-modal')">×</button>
+    </div>
+    <form id="add-user-form" onsubmit="event.preventDefault(); admin.saveUser();">
+      <div class="form-group">
+        <label>员工邮箱 *</label>
+        <input type="email" id="new-user-email" class="form-input" placeholder="员工登录邮箱" required>
+      </div>
+      <div class="form-group">
+        <label>员工姓名 *</label>
+        <input type="text" id="new-user-name" class="form-input" placeholder="员工姓名" required>
+      </div>
+      <div class="form-group">
+        <label>初始密码 *</label>
+        <input type="password" id="new-user-password" class="form-input" placeholder="至少6位" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>分配角色 *</label>
+        <div id="user-role-select" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">添加员工</button>
+    </form>
+  </div>
+</div>
+
+<!-- 修改密码 -->
+<div id="password-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('password-modal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">修改密码</div>
+      <button class="modal-close" onclick="hideModal('password-modal')">×</button>
+    </div>
+    <div class="form-group">
+      <label>新密码</label>
+      <input type="password" id="new-password" class="form-input" placeholder="至少6位" required minlength="6">
+    </div>
+    <div class="form-group">
+      <label>确认新密码</label>
+      <input type="password" id="confirm-password" class="form-input" placeholder="再次输入新密码" required minlength="6">
+    </div>
+    <button class="btn btn-primary btn-block mt-16" onclick="profile.changePassword()">确认修改</button>
+  </div>
+</div>
+
+<!-- JS -->
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/inquiries.js"></script>
+<script src="js/quotes.js"></script>
+<script src="js/orders.js"></script>
+<script src="js/suppliers.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/profile.js"></script>
+
+</body>
+</html>
