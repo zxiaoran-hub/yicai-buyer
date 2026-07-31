@@ -66,6 +66,27 @@ img { max-width: 100%; display: block; }
   box-shadow: var(--shadow-lg);
 }
 .login-card h3 { font-size: 18px; margin-bottom: 20px; color: var(--dark); }
+.login-back { font-size: 13px; color: var(--primary); cursor: pointer; margin-bottom: 16px; display: inline-block; }
+.login-back:hover { text-decoration: underline; }
+.login-type-grid { display: flex; flex-direction: column; gap: 16px; }
+.login-type-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.login-type-card:hover {
+  border-color: var(--primary);
+  background: rgba(26,115,96,0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.login-type-card:active { transform: translateY(0); }
+.login-type-icon { font-size: 40px; margin-bottom: 12px; }
+.login-type-name { font-size: 17px; font-weight: 600; color: var(--dark); margin-bottom: 8px; }
+.login-type-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
 .form-input {

@@ -355,6 +355,10 @@ function switchPage(page) {
 function showLogin() {
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('main-app').style.display = 'none';
+  // 重置到身份选择页
+  document.getElementById('login-step-choice').style.display = 'block';
+  document.getElementById('login-step-company').style.display = 'none';
+  document.getElementById('login-step-individual').style.display = 'none';
 }
 
 function showApp() {
@@ -512,24 +516,48 @@ const dashboard = {
   }
 };
 
+// ===== 身份选择 =====
+function selectLoginType(type) {
+  document.getElementById('login-step-choice').style.display = 'none';
+  if (type === 'company') {
+    document.getElementById('login-step-company').style.display = 'block';
+    // 重置到登录表单
+    document.getElementById('login-form').style.display = 'block';
+    document.getElementById('register-company-form').style.display = 'none';
+  } else {
+    document.getElementById('login-step-individual').style.display = 'block';
+    document.getElementById('login-individual-form').style.display = 'block';
+    document.getElementById('register-individual-form').style.display = 'none';
+  }
+}
+
+function backToChoice() {
+  document.getElementById('login-step-company').style.display = 'none';
+  document.getElementById('login-step-individual').style.display = 'none';
+  document.getElementById('login-step-choice').style.display = 'block';
+}
+
 // ===== 表单切换 =====
 function toggleAuthForm(form) {
-  const forms = ['login-form', 'register-company-form', 'login-individual-form', 'register-individual-form'];
-  forms.forEach(f => {
-    document.getElementById(f).style.display = 'none';
-  });
+  // 企业区切换
+  const companyForms = ['login-form', 'register-company-form'];
+  const individualForms = ['login-individual-form', 'register-individual-form'];
 
   switch (form) {
     case 'login':
+      companyForms.forEach(f => document.getElementById(f).style.display = 'none');
       document.getElementById('login-form').style.display = 'block';
       break;
     case 'register-company':
+      companyForms.forEach(f => document.getElementById(f).style.display = 'none');
       document.getElementById('register-company-form').style.display = 'block';
       break;
     case 'login-individual':
+      individualForms.forEach(f => document.getElementById(f).style.display = 'none');
       document.getElementById('login-individual-form').style.display = 'block';
       break;
     case 'register-individual':
+      individualForms.forEach(f => document.getElementById(f).style.display = 'none');
       document.getElementById('register-individual-form').style.display = 'block';
       break;
   }

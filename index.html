@@ -19,10 +19,28 @@
   <div class="login-title">异采 YiCai</div>
   <div class="login-subtitle">品牌采购，智选供应链</div>
 
-  <div class="login-card">
-    <!-- 公司用户登录 -->
+  <!-- Step 1: 身份选择 -->
+  <div id="login-step-choice" class="login-card">
+    <div class="login-type-grid">
+      <div class="login-type-card" onclick="selectLoginType('company')">
+        <div class="login-type-icon">🏢</div>
+        <div class="login-type-name">企业用户</div>
+        <div class="login-type-desc">品牌方公司账号登录<br>询价、下单、管理供应商</div>
+      </div>
+      <div class="login-type-card" onclick="selectLoginType('individual')">
+        <div class="login-type-icon">👤</div>
+        <div class="login-type-name">个人用户</div>
+        <div class="login-type-desc">个人账号登录<br>浏览供应商、查看产品</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 企业登录/注册 -->
+  <div id="login-step-company" class="login-card" style="display:none;">
+    <div class="login-back" onclick="backToChoice()">← 返回选择</div>
+
     <form id="login-form">
-      <h3>品牌方登录</h3>
+      <h3>企业登录</h3>
       <div class="form-group">
         <label>邮箱</label>
         <input type="email" name="email" class="form-input" placeholder="请输入注册邮箱" required>
@@ -33,11 +51,10 @@
       </div>
       <button type="submit" class="btn btn-primary">登录</button>
       <div class="login-switch">
-        还没有公司账号？<a onclick="toggleAuthForm('register-company');">企业注册</a>
+        还没有企业账号？<a onclick="toggleAuthForm('register-company');">企业注册</a>
       </div>
     </form>
 
-    <!-- 公司用户注册 -->
     <form id="register-company-form" style="display:none;">
       <h3>企业注册</h3>
       <div class="form-group">
@@ -61,13 +78,14 @@
         已有账号？<a onclick="toggleAuthForm('login');">返回登录</a>
       </div>
     </form>
+  </div>
 
-    <!-- 分隔线 -->
-    <div class="login-divider"><span>或</span></div>
+  <!-- Step 2: 个人登录/注册 -->
+  <div id="login-step-individual" class="login-card" style="display:none;">
+    <div class="login-back" onclick="backToChoice()">← 返回选择</div>
 
-    <!-- 个人用户入口 -->
     <form id="login-individual-form">
-      <h3>个人用户入口</h3>
+      <h3>个人用户登录</h3>
       <div class="form-group">
         <label>邮箱</label>
         <input type="email" name="email" class="form-input" placeholder="请输入个人注册邮箱" required>
@@ -76,13 +94,12 @@
         <label>密码</label>
         <input type="password" name="password" class="form-input" placeholder="请输入密码" required>
       </div>
-      <button type="submit" class="btn btn-primary">个人用户登录</button>
+      <button type="submit" class="btn btn-primary">登录</button>
       <div class="login-switch">
         还没有个人账号？<a onclick="toggleAuthForm('register-individual');">个人注册</a>
       </div>
     </form>
 
-    <!-- 个人用户注册 -->
     <form id="register-individual-form" style="display:none;">
       <h3>个人用户注册</h3>
       <div class="form-group">
@@ -99,7 +116,7 @@
       </div>
       <button type="submit" class="btn btn-primary">注册</button>
       <div class="login-switch">
-        已有账号？<a onclick="toggleAuthForm('login-individual');">返回个人登录</a>
+        已有账号？<a onclick="toggleAuthForm('login-individual');">返回登录</a>
       </div>
     </form>
   </div>
