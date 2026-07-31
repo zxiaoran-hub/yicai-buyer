@@ -10,6 +10,10 @@ let currentButtonPermissions = {};
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[App] DOMContentLoaded - app.js loaded');
+  // 平台检测并标记到 body
+  const platform = detectPlatform();
+  document.body.dataset.platform = platform;
+  console.log('[App] Platform:', platform);
   checkSession();
   bindEvents();
 });
@@ -413,6 +417,7 @@ function updateProfileInfo() {
 
 // ==================== 页面显示 ====================
 function showLogin() {
+  document.body.classList.remove('app-mode');
   document.getElementById('login-page').style.display = '';
   document.getElementById('main-app').style.display = 'none';
   // 重置到身份选择页
@@ -422,6 +427,7 @@ function showLogin() {
 }
 
 function showApp() {
+  document.body.classList.add('app-mode');
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('main-app').style.display = '';
 }
