@@ -269,13 +269,30 @@ function logout() {
   showLogin();
 }
 
+// ==================== 平台检测 ====================
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isSmallScreen = window.innerWidth < 768;
+  return (isMobile || isSmallScreen) ? 'h5' : 'pc';
+}
+
 // ==================== 权限加载 ====================
 async function loadUserPermissions() {
   try {
     const result = await supabase.rpc('get_user_permissions');
 
     if (result && result.permissions) {
-      currentPermissions = result.permissions;
+      // 检测当前平台
+      const currentPlatform = detectPlatform();
+      console.log('[Permissions] 当前平台:', currentPlatform);
+      
+      // 根据平台过滤权限
+      currentPermissions = result.permissions.filter(p => {
+        const permPlatform = p.platform || 'all';
+        return permPlatform === 'all' || permPlatform === currentPlatform;
+      });
+      
       currentUser.companyId = result.company_id;
       currentUser.companyName = result.company_name;
       currentUser.roles = result.roles || [];
