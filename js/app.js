@@ -9,6 +9,7 @@ let currentButtonPermissions = {};
 
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[App] DOMContentLoaded - app.js loaded');
   checkSession();
   bindEvents();
 });
@@ -29,13 +30,17 @@ function checkSession() {
 }
 
 function bindEvents() {
+  console.log('[App] bindEvents called');
   // 企业登录表单
   const loginForm = document.getElementById('login-form');
+  console.log('[App] login-form element:', loginForm);
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      console.log('[App] login-form submit event fired');
       handleCompanyLogin();
     });
+    console.log('[App] login-form submit handler bound');
   }
 
   // 企业注册表单
@@ -159,8 +164,10 @@ function toggleAuthForm(mode) {
 
 // ==================== 认证 ====================
 async function handleCompanyLogin() {
+  console.log('[Login] handleCompanyLogin called');
   const email = document.getElementById('login-email')?.value?.trim();
   const password = document.getElementById('login-password')?.value;
+  console.log('[Login] email:', email, 'password length:', password?.length);
   if (!email || !password) {
     showToast('请输入邮箱和密码');
     return;
@@ -179,8 +186,11 @@ async function handleIndividualLogin() {
 }
 
 async function doLogin(email, password) {
+  console.log('[Login] Attempting login for:', email);
   try {
+    console.log('[Login] Calling supabase.signIn...');
     const result = await supabase.signIn(email, password);
+    console.log('[Login] signIn result:', result);
     if (result.access_token) {
       localStorage.setItem('yicai_buyer_token', result.access_token);
       if (result.refresh_token) {
@@ -193,11 +203,15 @@ async function doLogin(email, password) {
         role: 'buyer'
       };
       localStorage.setItem('yicai_buyer_user', JSON.stringify(currentUser));
+      console.log('[Login] User logged in, loading permissions...');
       await loadUserPermissions();
+      console.log('[Login] Login complete!');
     } else {
+      console.error('[Login] No access_token in result');
       showToast('登录失败：未返回有效凭证');
     }
   } catch (err) {
+    console.error('[Login] Error:', err);
     showToast('登录失败：' + (err.message || '邮箱或密码错误'));
   }
 }
