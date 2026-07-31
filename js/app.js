@@ -244,20 +244,44 @@ async function handleIndividualRegister() {
   }
 
   try {
-    // 使用 RPC 一步完成注册 + 写入 buyer_profiles
+    // 第一步：创建 Supabase Auth 账号
+    console.log('[Register] Creating auth user for:', email);
+    const signUpResult = await supabase.signUp(email, password);
+    console.log('[Register] signUp result:', signUpResult);
+
+    if (!signUpResult.user) {
+      showToast('注册失败：未创建用户账号');
+      return;
+    }
+
+    // 第二步：调用 RPC 分配「采购个人用户」角色
+    console.log('[Register] Assigning role via RPC...');
     const rpcResult = await supabase.rpc('register_individual_buyer', {
       p_email: email,
       p_password: password,
       p_name: name
     });
+    console.log('[Register] RPC result:', rpcResult);
 
     if (rpcResult && rpcResult.success) {
-      showToast('注册成功，正在登录...');
-      await doLogin(email, password);
+      // 检查是否需要邮箱验证
+      if (signUpResult.user && !signUpResult.user.confirmed_at) {
+        showToast('注册成功！请查收验证邮件后登录');
+        // 切回登录页
+        const loginStepChoice = document.getElementById('login-step-choice');
+        const loginStepIndividual = document.getElementById('login-step-individual');
+        if (loginStepChoice) loginStepChoice.style.display = 'block';
+        if (loginStepIndividual) loginStepIndividual.style.display = 'none';
+      } else {
+        showToast('注册成功，正在登录...');
+        // 第三步：自动登录
+        await doLogin(email, password);
+      }
     } else {
-      showToast(rpcResult?.error || '注册失败');
+      showToast(rpcResult?.error || '角色分配失败，请联系管理员');
     }
   } catch (err) {
+    console.error('[Register] Error:', err);
     showToast('注册失败：' + (err.message || '请稍后重试'));
   }
 }
