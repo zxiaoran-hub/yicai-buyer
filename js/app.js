@@ -221,7 +221,14 @@ async function doLogin(email, password) {
 }
 
 async function handleCompanyRegister() {
-  showToast('企业注册请联系平台管理员开通');
+  showModal('企业账号开通', `
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">🏢</div>
+      <p style="font-size:15px;color:var(--gray-700);margin-bottom:12px;">企业采购方账号由平台管理员统一开通</p>
+      <p style="font-size:13px;color:var(--gray-500);">请联系平台管理员，提供公司名称、管理员姓名和邮箱即可开通</p>
+      <button class="btn btn-primary" style="margin-top:20px;" onclick="closeModal()">知道了</button>
+    </div>
+  `);
 }
 
 async function handleIndividualRegister() {
