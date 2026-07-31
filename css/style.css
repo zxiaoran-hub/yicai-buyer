@@ -784,6 +784,7 @@ img { max-width: 100%; display: block; }
   #page-dashboard > .stats-grid {
     width: 100%;
     flex-basis: 100%;
+    margin-bottom: 0;
   }
   #page-dashboard > .card {
     flex: 1 1 calc(50% - 8px);
