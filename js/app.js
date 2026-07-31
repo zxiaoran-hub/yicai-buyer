@@ -4,7 +4,7 @@
  */
 
 // ===== Supabase 初始化 =====
-const { createClient } = supabase;
+const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== 全局状态 =====
