@@ -439,6 +439,14 @@ function updateProfileInfo() {
     roleBadge.textContent = currentUser.companyId ? '企业' : '个人';
   }
 
+  // Sidebar user info (PC)
+  const sidebarAvatarText = document.getElementById('sidebar-avatar-text');
+  if (sidebarAvatarText) sidebarAvatarText.textContent = (currentUser.name || currentUser.email || '?')[0];
+  const sidebarUserName = document.getElementById('sidebar-user-name');
+  if (sidebarUserName) sidebarUserName.textContent = currentUser.name || currentUser.email || '-';
+  const sidebarUserRole = document.getElementById('sidebar-user-role');
+  if (sidebarUserRole) sidebarUserRole.textContent = currentUser.companyName || (currentUser.companyId ? '企业用户' : '个人用户');
+
   // Dashboard greeting
   const greeting = document.getElementById('user-greeting');
   if (greeting) {
