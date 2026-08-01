@@ -853,7 +853,106 @@ img { max-width: 100%; display: block; }
   #page-admin {
     max-width: 1200px;
   }
+
+  /* Supplier discovery - wider filters */
+  .sd-filters { gap: 10px; }
+  .sd-filter-select { font-size: 14px; padding: 8px 30px 8px 12px; }
+  .sd-filter-btn { padding: 8px 16px; font-size: 14px; }
+
+  /* Supplier cards - larger on PC */
+  .sd-card { padding: 20px; }
+  .sd-avatar { width: 56px; height: 56px; font-size: 24px; }
+  .sd-name-text { max-width: 400px; }
+
+  /* Supplier detail - centered layout */
+  .sd-detail-header { max-width: 800px; }
+  .sd-header-avatar { width: 72px; height: 72px; font-size: 30px; }
+  .sd-header-name { font-size: 22px; }
+  .sd-detail-tabs { max-width: 500px; }
+  #sd-tab-content { max-width: 800px; }
+  .sd-products { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .sd-contact-bar { left: 220px; bottom: 0; }
+  .sd-cert-images { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
+
+/* ===== 供应商发现页 - 筛选区 ===== */
+.sd-search-bar { margin-bottom: 12px; }
+.sd-search-input { padding-left: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 12px center; }
+.sd-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+.sd-filter-group { flex-shrink: 0; }
+.sd-filter-select { padding: 6px 28px 6px 10px; font-size: 13px; border-radius: 20px; min-width: auto; border: 1px solid var(--border); background-color: white; }
+.sd-filter-btn { padding: 6px 14px; font-size: 13px; border-radius: 20px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.sd-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.sd-filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.sd-filter-btn.active:hover { color: white; }
+
+/* 供应商卡片增强 */
+.sd-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.sd-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.sd-card:active { transform: translateY(0); }
+.sd-avatar { width: 52px; height: 52px; font-size: 22px; }
+.sd-avatar-featured { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #92400E; }
+.sd-info { flex: 1; min-width: 0; }
+.sd-name { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sd-name-text { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.sd-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.sd-badge { font-size: 10px; padding: 1px 7px; border-radius: 8px; font-weight: 500; white-space: nowrap; }
+.sd-badge-featured { background: #FEF3C7; color: #92400E; }
+.sd-badge-verified { background: #D1FAE5; color: #065F46; }
+.sd-meta { font-size: 12px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+.sd-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.sd-cat-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--primary-light); color: var(--primary); }
+.sd-desc { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
+.sd-featured-section { margin-bottom: 20px; }
+.sd-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.sd-section-icon { font-size: 16px; }
+.sd-section-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.sd-section-count { font-size: 12px; color: var(--text-secondary); background: var(--bg); padding: 2px 8px; border-radius: 10px; }
+.sd-load-more { text-align: center; padding: 16px; color: var(--primary); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--radius); transition: background 0.2s; }
+.sd-load-more:hover { background: var(--primary-light); }
+
+/* ===== 供应商详情页 ===== */
+.sd-back-btn { font-size: 14px; color: var(--primary); cursor: pointer; margin-bottom: 12px; display: inline-block; font-weight: 500; }
+.sd-back-btn:hover { text-decoration: underline; }
+.sd-detail-header { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.sd-header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.sd-header-avatar { width: 60px; height: 60px; border-radius: 14px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex-shrink: 0; }
+.sd-header-info { flex: 1; min-width: 0; }
+.sd-header-name { font-size: 18px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+.sd-header-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.sd-header-meta { display: flex; flex-wrap: wrap; gap: 16px; }
+.sd-meta-item { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+.sd-meta-icon { font-size: 14px; }
+.sd-detail-tabs { display: flex; background: var(--bg-card); border-radius: 12px; padding: 4px; margin-bottom: 16px; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.sd-detail-tab { flex: 1; text-align: center; padding: 10px 4px; font-size: 13px; font-weight: 500; color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.sd-detail-tab.active { background: var(--primary); color: white; font-weight: 600; }
+.sd-intro { }
+.sd-intro-section { margin-bottom: 16px; }
+.sd-intro-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+.sd-intro-text { font-size: 14px; line-height: 1.7; color: var(--text); }
+.sd-products { display: grid; gap: 12px; }
+.sd-product-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.sd-product-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.sd-product-name { font-size: 15px; font-weight: 600; }
+.sd-product-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+.sd-product-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 16px; }
+.sd-cert-list { display: grid; gap: 8px; }
+.sd-cert-item { font-size: 14px; padding: 10px 14px; background: var(--bg); border-radius: var(--radius-sm); }
+.sd-cert-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.sd-cert-img { width: 100%; height: 100px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.sd-contact-bar { position: fixed; bottom: 60px; left: 0; right: 0; background: white; padding: 12px 16px; border-top: 1px solid var(--border); z-index: 50; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+
+/* ===== 智能推荐供应商列表 ===== */
+.sd-match-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.sd-match-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.sd-match-desc { font-size: 12px; color: var(--text-secondary); }
+.sd-match-list { display: grid; gap: 8px; max-height: 200px; overflow-y: auto; margin-bottom: 12px; }
+.sd-match-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; transition: background 0.15s; }
+.sd-match-item:hover { background: var(--primary-light); }
+.sd-match-checkbox { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+.sd-match-info { flex: 1; min-width: 0; }
+.sd-match-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.sd-match-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 
 /* ===== Utility ===== */
 .text-center { text-align: center; }

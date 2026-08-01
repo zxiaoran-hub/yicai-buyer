@@ -215,13 +215,77 @@
     <div id="orders-list"></div>
   </div>
 
-  <!-- ===== 供应商浏览 ===== -->
+  <!-- ===== 供应商发现 ===== -->
   <div id="page-suppliers" class="page">
-    <div class="page-title">供应商列表</div>
-    <div class="form-group">
-      <input type="text" id="supplier-search" class="form-input" placeholder="搜索供应商名称..." oninput="suppliers.search(this.value)">
+    <div class="page-title">发现供应商</div>
+    <!-- 搜索栏 -->
+    <div class="sd-search-bar">
+      <input type="text" id="supplier-search" class="form-input sd-search-input" placeholder="搜索公司名、品类、描述..." oninput="suppliers.search(this.value)">
     </div>
+    <!-- 筛选区 -->
+    <div class="sd-filters">
+      <div class="sd-filter-group">
+        <select class="form-select sd-filter-select" onchange="suppliers.setFilter('category', this.value)">
+          <option value="">全部品类</option>
+          <option value="护肤">护肤</option>
+          <option value="彩妆">彩妆</option>
+          <option value="面膜">面膜</option>
+          <option value="精华">精华</option>
+          <option value="洗护">洗护</option>
+          <option value="防晒">防晒</option>
+          <option value="香氛">香氛</option>
+          <option value="身体护理">身体护理</option>
+          <option value="个护">个护</option>
+        </select>
+      </div>
+      <div class="sd-filter-group">
+        <select class="form-select sd-filter-select" onchange="suppliers.setFilter('region', this.value)">
+          <option value="">全部地区</option>
+          <option value="广东">广东</option>
+          <option value="浙江">浙江</option>
+          <option value="江苏">江苏</option>
+          <option value="上海">上海</option>
+          <option value="山东">山东</option>
+          <option value="福建">福建</option>
+          <option value="北京">北京</option>
+          <option value="四川">四川</option>
+          <option value="湖北">湖北</option>
+          <option value="河南">河南</option>
+          <option value="河北">河北</option>
+          <option value="安徽">安徽</option>
+          <option value="江西">江西</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="sd-filter-group">
+        <button class="sd-filter-btn" data-filter="verified" data-value="yes" onclick="suppliers.setFilter('verified', suppliers.currentFilters.verified==='yes'?'':'yes')">✓ 已认证</button>
+      </div>
+      <div class="sd-filter-group">
+        <button class="sd-filter-btn" data-filter="featured" data-value="yes" onclick="suppliers.setFilter('featured', suppliers.currentFilters.featured==='yes'?'':'yes')">⭐ 精选</button>
+      </div>
+    </div>
+    <!-- 供应商列表 -->
     <div id="suppliers-list"></div>
+  </div>
+
+  <!-- ===== 供应商详情主页 ===== -->
+  <div id="page-supplier-detail" class="page">
+    <!-- 返回按钮 -->
+    <div class="sd-back-btn" onclick="suppliers.backToList()">← 返回列表</div>
+    <!-- 头部信息 -->
+    <div id="sd-header" class="sd-detail-header"></div>
+    <!-- Tab 切换 -->
+    <div class="sd-detail-tabs">
+      <div class="sd-detail-tab active" data-tab="intro" onclick="suppliers.switchDetailTab('intro')">公司简介</div>
+      <div class="sd-detail-tab" data-tab="products" onclick="suppliers.switchDetailTab('products')">产品/服务</div>
+      <div class="sd-detail-tab" data-tab="certs" onclick="suppliers.switchDetailTab('certs')">资质证书</div>
+    </div>
+    <!-- Tab 内容 -->
+    <div id="sd-tab-content"></div>
+    <!-- 底部固定按钮 -->
+    <div class="sd-contact-bar">
+      <button class="btn btn-primary btn-block" onclick="suppliers.contactSupplier()">📩 联系供应商</button>
+    </div>
   </div>
 
   <!-- ===== 管理功能（仅管理员可见） ===== -->
@@ -313,8 +377,8 @@
       <span class="tab-label">订单</span>
     </div>
     <div class="tab-item" data-page="suppliers" onclick="switchPage('suppliers')">
-      <span class="tab-icon">🏭</span>
-      <span class="tab-label">供应商</span>
+      <span class="tab-icon">🔍</span>
+      <span class="tab-label">发现</span>
     </div>
     <div class="tab-item" data-page="admin" id="tab-admin" onclick="switchPage('admin')" style="display:none;">
       <span class="tab-icon">⚙️</span>
@@ -381,6 +445,14 @@
           <option value="true">公开 - 所有认证供应商可见</option>
           <option value="false">定向 - 仅指定供应商可见</option>
         </select>
+      </div>
+      <!-- 智能推荐供应商 -->
+      <div id="inquiry-match-section" style="display:none;">
+        <div class="sd-match-header">
+          <span class="sd-match-title">🎯 推荐供应商</span>
+          <span class="sd-match-desc">根据您的品类智能匹配</span>
+        </div>
+        <div id="inquiry-match-list" class="sd-match-list"></div>
       </div>
       <button type="submit" class="btn btn-primary btn-block">发布询价</button>
     </form>
@@ -549,14 +621,14 @@
 </div>
 
 <!-- JS -->
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
-<script src="js/inquiries.js"></script>
-<script src="js/quotes.js"></script>
-<script src="js/orders.js"></script>
-<script src="js/suppliers.js"></script>
-<script src="js/admin.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/config.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+<script src="js/inquiries.js?v=2"></script>
+<script src="js/quotes.js?v=2"></script>
+<script src="js/orders.js?v=2"></script>
+<script src="js/suppliers.js?v=2"></script>
+<script src="js/admin.js?v=2"></script>
+<script src="js/profile.js?v=2"></script>
 
 </body>
 </html>

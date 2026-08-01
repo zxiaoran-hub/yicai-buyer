@@ -476,7 +476,11 @@ function switchPage(page) {
 
   // 加载对应数据
   if (page === 'dashboard') loadDashboard();
-  if (page === 'suppliers') loadSuppliers();
+  // 隐藏供应商详情页
+  const supplierDetailPage = document.getElementById('page-supplier-detail');
+  if (supplierDetailPage) supplierDetailPage.classList.remove('active');
+
+  if (page === 'suppliers' && typeof suppliers !== 'undefined') suppliers.load();
 }
 
 // ==================== 数据加载 ====================
@@ -500,42 +504,6 @@ async function loadDashboard() {
     const countS = await supabase.getCount('suppliers', { status: 'active' });
     if (statSuppliers) statSuppliers.textContent = countS;
   } catch { if (statSuppliers) statSuppliers.textContent = '0'; }
-}
-
-async function loadSuppliers() {
-  try {
-    const suppliers = await supabase.query({
-      table: 'suppliers',
-      select: 'id,company_name,short_name,industry,status',
-      filter: { status: 'active' },
-      order: 'company_name'
-    });
-    renderSuppliers(suppliers);
-  } catch (e) {
-    console.warn('Load suppliers failed:', e);
-    renderSuppliers([]);
-  }
-}
-
-function renderSuppliers(suppliers) {
-  const list = document.getElementById('suppliers-list');
-  if (!list) return;
-
-  if (suppliers.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">暂无供应商</div>';
-    return;
-  }
-
-  list.innerHTML = suppliers.map(s => `
-    <div class="supplier-card" onclick="showSupplierDetail(${s.id})">
-      <div style="font-weight:600;">${s.company_name || s.short_name || '未命名'}</div>
-      <div style="font-size:13px;color:#666;margin-top:4px;">${s.industry || ''}</div>
-    </div>
-  `).join('');
-}
-
-function showSupplierDetail(id) {
-  showToast('供应商详情功能开发中');
 }
 
 // ==================== Toast ====================

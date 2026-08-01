@@ -27,10 +27,10 @@ const inquiries = {
       };
 
       // 按公司隔离或个人用户只看自己的
-      if (appState.companyId) {
-        params.filter = { company_id: appState.companyId };
-      } else {
-        params.filter = { created_by: appState.user?.id };
+      if (currentUser && currentUser.companyId) {
+        params.filter = { company_id: currentUser.companyId };
+      } else if (currentUser) {
+        params.filter = { created_by: currentUser.id };
       }
 
       if (filter && filter !== 'all') {
@@ -69,7 +69,7 @@ const inquiries = {
     }
   },
 
-  showCreateForm() {
+  showCreateForm(targetSupplierName) {
     document.getElementById('inquiry-form-title').textContent = '发布询价';
     document.getElementById('inquiry-id').value = '';
     document.getElementById('inquiry-title').value = '';
@@ -79,7 +79,75 @@ const inquiries = {
     document.getElementById('inquiry-target-price').value = '';
     document.getElementById('inquiry-deadline').value = '';
     document.getElementById('inquiry-public').value = 'true';
+
+    // 如果有指定供应商名称，预填到描述中
+    if (targetSupplierName) {
+      document.getElementById('inquiry-description').value = '定向询价：' + targetSupplierName;
+      document.getElementById('inquiry-public').value = 'false';
+    }
+
+    // 隐藏推荐区域
+    const matchSection = document.getElementById('inquiry-match-section');
+    if (matchSection) matchSection.style.display = 'none';
+    this._matchedSuppliers = [];
+
+    // 绑定品类变化事件（触发智能推荐）
+    const catSelect = document.getElementById('inquiry-category');
+    if (catSelect && !catSelect._matchBound) {
+      catSelect.addEventListener('change', () => inquiries.onCategoryChange());
+      catSelect._matchBound = true;
+    }
+
     showModal('inquiry-modal');
+  },
+
+  async onCategoryChange() {
+    const category = document.getElementById('inquiry-category').value;
+    const matchSection = document.getElementById('inquiry-match-section');
+    const matchList = document.getElementById('inquiry-match-list');
+
+    if (!category) {
+      if (matchSection) matchSection.style.display = 'none';
+      return;
+    }
+
+    // 显示loading
+    if (matchSection) matchSection.style.display = 'block';
+    if (matchList) matchList.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;">正在匹配供应商...</div>';
+
+    try {
+      let matched = [];
+      if (typeof suppliers !== 'undefined' && suppliers.getMatchedSuppliers) {
+        matched = await suppliers.getMatchedSuppliers(category, null, 8);
+      }
+
+      this._matchedSuppliers = matched || [];
+
+      if (this._matchedSuppliers.length === 0) {
+        if (matchList) matchList.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;">暂无匹配的供应商推荐</div>';
+        return;
+      }
+
+      if (matchList) {
+        matchList.innerHTML = this._matchedSuppliers.map((s, idx) => {
+          const name = (typeof escapeHtml === 'function') ? escapeHtml(s.company_name || s.short_name || '未命名') : (s.company_name || '未命名');
+          const region = s.region ? '📍 ' + ((typeof escapeHtml === 'function') ? escapeHtml(s.region) : s.region) : '';
+          const score = s.match_score ? '匹配度 ' + Math.round(s.match_score) : '';
+          const verified = s.is_verified ? ' ✓' : '';
+          return `
+            <label class="sd-match-item">
+              <input type="checkbox" class="sd-match-checkbox" value="${s.id}" data-name="${(s.company_name || '').replace(/"/g, '&quot;')}">
+              <div class="sd-match-info">
+                <div class="sd-match-name">${name}${verified}</div>
+                <div class="sd-match-meta">${region} ${score}</div>
+              </div>
+            </label>
+          `;
+        }).join('');
+      }
+    } catch (e) {
+      if (matchList) matchList.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;">匹配失败，请手动选择供应商</div>';
+    }
   },
 
   async save() {
@@ -95,19 +163,57 @@ const inquiries = {
       status: 'open'
     };
 
-    if (appState.companyId) {
-      data.company_id = appState.companyId;
+    if (currentUser && currentUser.companyId) {
+      data.company_id = currentUser.companyId;
     }
-    data.created_by = appState.user?.id;
+    data.created_by = currentUser?.id;
+
+    // 收集勾选的推荐供应商
+    const selectedSupplierIds = [];
+    document.querySelectorAll('.sd-match-checkbox:checked').forEach(cb => {
+      selectedSupplierIds.push({ id: cb.value, name: cb.dataset.name || '' });
+    });
 
     try {
+      let savedInquiryId = id;
       if (id) {
         await supabase.update('buyer_inquiries', data, { id: id });
         showToast('询价已更新 ✅');
       } else {
-        await supabase.insert('buyer_inquiries', data);
+        const result = await supabase.insert('buyer_inquiries', data);
+        // 获取保存后的ID（如果返回了）
+        if (result && result[0] && result[0].id) {
+          savedInquiryId = result[0].id;
+        }
         showToast('询价已发布 ✅');
       }
+
+      // 为勾选的供应商创建定向询盘记录
+      if (selectedSupplierIds.length > 0 && savedInquiryId) {
+        for (const supplier of selectedSupplierIds) {
+          try {
+            await supabase.insert('buyer_inquiries', {
+              title: data.title,
+              category: data.category,
+              description: data.description + '（定向发送给 ' + supplier.name + '）',
+              quantity: data.quantity,
+              target_price: data.target_price,
+              deadline: data.deadline,
+              is_public: false,
+              status: 'open',
+              supplier_id: supplier.id,
+              company_id: data.company_id,
+              created_by: data.created_by
+            });
+          } catch (e) {
+            console.warn('Failed to create inquiry for supplier:', supplier.name, e);
+          }
+        }
+        if (selectedSupplierIds.length > 0) {
+          showToast('询价已发布，已发送给 ' + selectedSupplierIds.length + ' 家供应商 ✅');
+        }
+      }
+
       hideModal('inquiry-modal');
       this.load();
     } catch (e) {
