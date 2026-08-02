@@ -500,6 +500,8 @@ function switchPage(page) {
   if (supplierDetailPage) supplierDetailPage.classList.remove('active');
 
   if (page === 'suppliers' && typeof suppliers !== 'undefined') suppliers.load();
+  if (page === 'favorites' && typeof favorites !== 'undefined') favorites.init();
+  if (page === 'my-suppliers' && typeof mySuppliers !== 'undefined') mySuppliers.init();
 }
 
 // ==================== 数据加载 ====================

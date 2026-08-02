@@ -1172,3 +1172,76 @@ img { max-width: 100%; display: block; }
   }
   .pd-card-img { height: 180px; }
 }
+
+/* ==================== 收藏管理页 ==================== */
+.fav-tab-bar { display:flex; gap:8px; margin-bottom:16px; }
+.fav-tab { flex:1; text-align:center; padding:10px 0; border-radius:10px; background:#f5f5f5; font-size:14px; cursor:pointer; transition:all 0.2s; }
+.fav-tab.active { background:var(--primary); color:#fff; font-weight:600; }
+.fav-list { display:flex; flex-direction:column; gap:10px; }
+
+/* 收藏商品卡片 */
+.fav-product-card { display:flex; align-items:center; gap:12px; padding:12px; background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); cursor:pointer; position:relative; }
+.fav-product-img { width:60px; height:60px; border-radius:8px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; overflow:hidden; }
+.fav-product-img img { width:100%; height:100%; object-fit:cover; }
+.fav-product-info { flex:1; min-width:0; }
+.fav-product-name { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fav-product-meta { font-size:12px; color:#888; margin-top:2px; display:flex; gap:8px; }
+.fav-product-supplier { color:var(--primary); }
+.fav-product-bottom { display:flex; justify-content:space-between; align-items:center; margin-top:4px; }
+.fav-product-price { font-size:13px; color:var(--danger); font-weight:600; }
+.fav-product-moq { font-size:11px; color:#aaa; }
+.fav-remove-btn { position:absolute; top:8px; right:8px; font-size:16px; opacity:0.5; cursor:pointer; padding:4px; }
+.fav-remove-btn:hover { opacity:1; }
+
+/* 收藏供应商卡片 */
+.fav-supplier-card { padding:14px; background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); cursor:pointer; position:relative; }
+.fav-supplier-header { display:flex; align-items:center; gap:8px; }
+.fav-supplier-name { font-size:15px; font-weight:600; flex:1; }
+.fav-verified-badge { font-size:11px; color:var(--primary); background:rgba(33,150,243,0.1); padding:2px 6px; border-radius:4px; }
+.fav-supplier-meta { font-size:12px; color:#888; margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; }
+.fav-supplier-contact { font-size:12px; color:#666; margin-top:4px; }
+
+/* ==================== 我的供应商页 ==================== */
+.ms-filter-bar { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px; }
+.ms-filter-item { padding:6px 12px; border-radius:16px; background:#f5f5f5; font-size:12px; white-space:nowrap; cursor:pointer; transition:all 0.2s; }
+.ms-filter-item.active { background:var(--primary); color:#fff; }
+
+.ms-card { padding:14px; background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-bottom:10px; cursor:pointer; }
+.ms-card-header { display:flex; align-items:center; justify-content:space-between; }
+.ms-card-name { font-size:15px; font-weight:600; flex:1; }
+.ms-status-badge { font-size:11px; color:#fff; padding:2px 8px; border-radius:10px; }
+.ms-card-meta { font-size:12px; color:#888; margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; }
+.ms-verified { color:var(--primary); }
+.ms-card-tags { margin-top:6px; display:flex; gap:4px; flex-wrap:wrap; }
+.ms-tag { font-size:11px; background:rgba(33,150,243,0.1); color:var(--primary); padding:2px 8px; border-radius:10px; }
+.ms-card-notes { font-size:12px; color:#666; margin-top:4px; }
+.ms-card-footer { display:flex; justify-content:space-between; font-size:11px; color:#aaa; margin-top:8px; }
+
+/* 我的供应商详情 */
+.ms-detail-section { margin-bottom:18px; }
+.ms-detail-name { font-size:18px; font-weight:700; }
+.ms-detail-meta { font-size:13px; color:#888; margin-top:4px; display:flex; gap:10px; }
+.ms-detail-label { font-size:13px; color:#666; font-weight:600; margin-bottom:6px; }
+.ms-status-select { width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; }
+.ms-tags-container { display:flex; gap:6px; flex-wrap:wrap; min-height:28px; }
+.ms-add-tag-row { display:flex; gap:8px; margin-top:8px; }
+.ms-tag-input { flex:1; padding:6px 10px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
+.ms-notes-textarea { width:100%; min-height:80px; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:13px; resize:vertical; box-sizing:border-box; }
+.ms-contact-info { font-size:13px; color:#555; line-height:1.8; }
+.ms-back-link { text-align:center; color:var(--primary); font-size:14px; cursor:pointer; padding:12px; }
+
+/* 供应商详情页操作按钮 */
+.sd-action-row { display:flex; gap:10px; margin-bottom:8px; justify-content:center; }
+.sd-action-btn { width:44px; height:44px; border-radius:50%; border:1px solid #ddd; background:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.sd-action-btn:hover { background:#f5f5f5; border-color:var(--primary); }
+
+/* 空状态 */
+.empty-state { text-align:center; padding:40px 20px; color:#999; font-size:14px; }
+
+/* 底部Tab适配（7个tab） */
+@media (max-width: 768px) {
+  .tab-bar { justify-content:space-around; }
+  .tab-item { padding:6px 2px; font-size:10px; }
+  .tab-icon { font-size:18px; }
+  .tab-label { font-size:10px; }
+}

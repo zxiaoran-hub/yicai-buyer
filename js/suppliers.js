@@ -293,6 +293,9 @@ const suppliers = {
       this.renderDetailHeader(s);
       // 默认加载简介tab
       this.switchDetailTab('intro');
+      // 加载收藏状态并更新按钮
+      await this.loadSupplierFavorites();
+      this.updateDetailButtons();
     } catch (e) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败: ' + escapeHtml(e.message) + '</div></div>';
     }
@@ -516,6 +519,84 @@ const suppliers = {
         .slice(0, limit);
     } catch (e) {
       return [];
+    }
+  },
+
+  // ==================== 供应商收藏 & 加为我的供应商 ====================
+  supplierFavorites: new Set(),
+
+  async loadSupplierFavorites() {
+    if (!currentUser) return;
+    try {
+      const favs = await supabase.query('supplier_favorites', {
+        select: 'supplier_id',
+        filter: { user_id: currentUser.id }
+      });
+      this.supplierFavorites = new Set(favs.map(f => f.supplier_id));
+    } catch (e) { /* table might not exist yet */ }
+  },
+
+  async updateDetailButtons() {
+    if (!this.currentDetailSupplier || !currentUser) return;
+    const sid = this.currentDetailSupplier.id;
+
+    // 更新收藏按钮
+    const favBtn = document.getElementById('sd-fav-btn');
+    if (favBtn) {
+      const isFav = this.supplierFavorites.has(sid);
+      favBtn.textContent = isFav ? '❤️' : '🤍';
+      favBtn.title = isFav ? '取消收藏' : '收藏';
+    }
+  },
+
+  async toggleFavorite() {
+    if (!currentUser) { showToast('请先登录'); return; }
+    if (!this.currentDetailSupplier) return;
+    const sid = this.currentDetailSupplier.id;
+    const isFav = this.supplierFavorites.has(sid);
+
+    try {
+      if (isFav) {
+        await supabase.delete('supplier_favorites', { user_id: currentUser.id, supplier_id: sid });
+        this.supplierFavorites.delete(sid);
+        showToast('已取消收藏');
+      } else {
+        await supabase.insert('supplier_favorites', { user_id: currentUser.id, supplier_id: sid });
+        this.supplierFavorites.add(sid);
+        showToast('已收藏 ❤️');
+      }
+      this.updateDetailButtons();
+    } catch (e) {
+      showToast('操作失败');
+    }
+  },
+
+  async addToMySuppliers() {
+    if (!currentUser) { showToast('请先登录'); return; }
+    if (!this.currentDetailSupplier) return;
+    const sid = this.currentDetailSupplier.id;
+
+    try {
+      // 检查是否已存在
+      const existing = await supabase.query('buyer_supplier_relations', {
+        filter: { buyer_user_id: currentUser.id, supplier_id: sid }
+      });
+      if (existing.length) {
+        showToast('已在我的供应商列表中');
+        return;
+      }
+      await supabase.insert('buyer_supplier_relations', {
+        buyer_user_id: currentUser.id,
+        supplier_id: sid,
+        buyer_company_id: currentUser.companyId || null,
+        status: 'potential',
+        source: 'discovery',
+        notes: '',
+        tags: []
+      });
+      showToast('已添加到我的供应商 ✅');
+    } catch (e) {
+      showToast('添加失败');
     }
   }
 };

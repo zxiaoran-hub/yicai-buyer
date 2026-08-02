@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>异采 · 品牌方端</title>
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 
@@ -329,7 +329,37 @@
     <div id="sd-tab-content"></div>
     <!-- 底部固定按钮 -->
     <div class="sd-contact-bar">
+      <div class="sd-action-row">
+        <button class="sd-action-btn" id="sd-fav-btn" onclick="suppliers.toggleFavorite()" title="收藏">🤍</button>
+        <button class="sd-action-btn" id="sd-add-btn" onclick="suppliers.addToMySuppliers()" title="加为我的供应商">📋</button>
+      </div>
       <button class="btn btn-primary btn-block" onclick="suppliers.contactSupplier()">📩 联系供应商</button>
+    </div>
+  </div>
+
+  <!-- ===== 我的收藏 ===== -->
+  <div id="page-favorites" class="page">
+    <div class="page-title" style="margin-bottom:12px;">我的收藏</div>
+    <div class="fav-tab-bar">
+      <div class="fav-tab active" data-tab="products" onclick="favorites.switchTab('products')">🏷️ 收藏商品</div>
+      <div class="fav-tab" data-tab="suppliers" onclick="favorites.switchTab('suppliers')">🏭 收藏供应商</div>
+    </div>
+    <div id="fav-products-section">
+      <div id="fav-products-list" class="fav-list"></div>
+    </div>
+    <div id="fav-suppliers-section" style="display:none;">
+      <div id="fav-suppliers-list" class="fav-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== 我的供应商 ===== -->
+  <div id="page-my-suppliers" class="page">
+    <div class="page-title" style="margin-bottom:12px;">我的供应商</div>
+    <div id="my-suppliers-list-view">
+      <div id="my-suppliers-list"></div>
+    </div>
+    <div id="my-suppliers-detail-view" style="display:none;">
+      <div id="ms-detail-content"></div>
     </div>
   </div>
 
@@ -424,6 +454,14 @@
     <div class="tab-item" data-page="suppliers" onclick="switchPage('suppliers')">
       <span class="tab-icon">🔍</span>
       <span class="tab-label">发现</span>
+    </div>
+    <div class="tab-item" data-page="my-suppliers" onclick="switchPage('my-suppliers')">
+      <span class="tab-icon">🏭</span>
+      <span class="tab-label">供应商</span>
+    </div>
+    <div class="tab-item" data-page="favorites" onclick="switchPage('favorites')">
+      <span class="tab-icon">❤️</span>
+      <span class="tab-label">收藏</span>
     </div>
     <div class="tab-item" data-page="admin" id="tab-admin" onclick="switchPage('admin')" style="display:none;">
       <span class="tab-icon">⚙️</span>
@@ -674,7 +712,7 @@
 
 <!-- JS -->
 <script src="js/config.js?v=6"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/app.js?v=5"></script>
 <script src="js/inquiries.js?v=3"></script>
 <script src="js/quotes.js?v=2"></script>
 <!-- ===== 商品详情弹窗 ===== -->
@@ -689,8 +727,10 @@
 </div>
 
 <script src="js/orders.js?v=2"></script>
-<script src="js/suppliers.js?v=4"></script>
+<script src="js/suppliers.js?v=5"></script>
 <script src="js/product-discovery.js?v=2"></script>
+<script src="js/favorites.js?v=1"></script>
+<script src="js/my-suppliers.js?v=1"></script>
 <script src="js/admin.js?v=2"></script>
 <script src="js/profile.js?v=2"></script>
 
