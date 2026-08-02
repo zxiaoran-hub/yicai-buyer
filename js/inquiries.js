@@ -86,6 +86,10 @@ const inquiries = {
       document.getElementById('inquiry-public').value = 'false';
     }
 
+    // 清除关联商品ID
+    const pidField = document.getElementById('inquiry-product-id');
+    if (pidField) pidField.value = '';
+
     // 隐藏推荐区域
     const matchSection = document.getElementById('inquiry-match-section');
     if (matchSection) matchSection.style.display = 'none';
@@ -167,6 +171,12 @@ const inquiries = {
       data.company_id = currentUser.companyId;
     }
     data.created_by = currentUser?.id;
+
+    // 关联商品ID（从商品详情发起询价时设置）
+    const productIdField = document.getElementById('inquiry-product-id');
+    if (productIdField && productIdField.value) {
+      data.product_id = productIdField.value;
+    }
 
     // 收集勾选的推荐供应商
     const selectedSupplierIds = [];

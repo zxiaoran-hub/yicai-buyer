@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>异采 · 品牌方端</title>
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 
@@ -218,57 +218,99 @@
     <div id="orders-list"></div>
   </div>
 
-  <!-- ===== 供应商发现 ===== -->
+  <!-- ===== 发现页（供应商 + 商品 Tab 切换） ===== -->
   <div id="page-suppliers" class="page">
-    <div class="page-title">发现供应商</div>
-    <!-- 搜索栏 -->
-    <div class="sd-search-bar">
-      <input type="text" id="supplier-search" class="form-input sd-search-input" placeholder="搜索公司名、品类、描述..." oninput="suppliers.search(this.value)">
+    <div class="page-title" style="margin-bottom:12px;">发现</div>
+    <!-- Tab 切换 -->
+    <div class="discovery-tabs" style="display:flex;gap:0;margin-bottom:16px;background:var(--bg-secondary,#f5f5f5);border-radius:10px;padding:3px;">
+      <button class="discovery-tab active" id="tab-supplier" onclick="discoverySwitchTab('supplier')" style="flex:1;padding:8px 0;border:none;background:transparent;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;">按供应商</button>
+      <button class="discovery-tab" id="tab-product" onclick="discoverySwitchTab('product')" style="flex:1;padding:8px 0;border:none;background:transparent;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;">按商品</button>
     </div>
-    <!-- 筛选区 -->
-    <div class="sd-filters">
-      <div class="sd-filter-group">
-        <select class="form-select sd-filter-select" onchange="suppliers.setFilter('category', this.value)">
-          <option value="">全部品类</option>
-          <option value="护肤">护肤</option>
-          <option value="彩妆">彩妆</option>
-          <option value="面膜">面膜</option>
-          <option value="精华">精华</option>
-          <option value="洗护">洗护</option>
-          <option value="防晒">防晒</option>
-          <option value="香氛">香氛</option>
-          <option value="身体护理">身体护理</option>
-          <option value="个护">个护</option>
-        </select>
+
+    <!-- ===== 按供应商视图 ===== -->
+    <div id="view-supplier">
+      <!-- 搜索栏 -->
+      <div class="sd-search-bar">
+        <input type="text" id="supplier-search" class="form-input sd-search-input" placeholder="搜索公司名、品类、描述..." oninput="suppliers.search(this.value)">
       </div>
-      <div class="sd-filter-group">
-        <select class="form-select sd-filter-select" onchange="suppliers.setFilter('region', this.value)">
-          <option value="">全部地区</option>
-          <option value="广东">广东</option>
-          <option value="浙江">浙江</option>
-          <option value="江苏">江苏</option>
-          <option value="上海">上海</option>
-          <option value="山东">山东</option>
-          <option value="福建">福建</option>
-          <option value="北京">北京</option>
-          <option value="四川">四川</option>
-          <option value="湖北">湖北</option>
-          <option value="河南">河南</option>
-          <option value="河北">河北</option>
-          <option value="安徽">安徽</option>
-          <option value="江西">江西</option>
-          <option value="其他">其他</option>
-        </select>
+      <!-- 筛选区 -->
+      <div class="sd-filters">
+        <div class="sd-filter-group">
+          <select class="form-select sd-filter-select" onchange="suppliers.setFilter('category', this.value)">
+            <option value="">全部品类</option>
+            <option value="护肤">护肤</option>
+            <option value="彩妆">彩妆</option>
+            <option value="面膜">面膜</option>
+            <option value="精华">精华</option>
+            <option value="洗护">洗护</option>
+            <option value="防晒">防晒</option>
+            <option value="香氛">香氛</option>
+            <option value="身体护理">身体护理</option>
+            <option value="个护">个护</option>
+          </select>
+        </div>
+        <div class="sd-filter-group">
+          <select class="form-select sd-filter-select" onchange="suppliers.setFilter('region', this.value)">
+            <option value="">全部地区</option>
+            <option value="广东">广东</option>
+            <option value="浙江">浙江</option>
+            <option value="江苏">江苏</option>
+            <option value="上海">上海</option>
+            <option value="山东">山东</option>
+            <option value="福建">福建</option>
+            <option value="北京">北京</option>
+            <option value="四川">四川</option>
+            <option value="湖北">湖北</option>
+            <option value="河南">河南</option>
+            <option value="河北">河北</option>
+            <option value="安徽">安徽</option>
+            <option value="江西">江西</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="sd-filter-group">
+          <button class="sd-filter-btn" data-filter="verified" data-value="yes" onclick="suppliers.setFilter('verified', suppliers.currentFilters.verified==='yes'?'':'yes')">✓ 已认证</button>
+        </div>
+        <div class="sd-filter-group">
+          <button class="sd-filter-btn" data-filter="featured" data-value="yes" onclick="suppliers.setFilter('featured', suppliers.currentFilters.featured==='yes'?'':'yes')">⭐ 精选</button>
+        </div>
       </div>
-      <div class="sd-filter-group">
-        <button class="sd-filter-btn" data-filter="verified" data-value="yes" onclick="suppliers.setFilter('verified', suppliers.currentFilters.verified==='yes'?'':'yes')">✓ 已认证</button>
-      </div>
-      <div class="sd-filter-group">
-        <button class="sd-filter-btn" data-filter="featured" data-value="yes" onclick="suppliers.setFilter('featured', suppliers.currentFilters.featured==='yes'?'':'yes')">⭐ 精选</button>
-      </div>
+      <!-- 供应商列表 -->
+      <div id="suppliers-list"></div>
     </div>
-    <!-- 供应商列表 -->
-    <div id="suppliers-list"></div>
+
+    <!-- ===== 按商品视图 ===== -->
+    <div id="view-product" style="display:none;">
+      <!-- 商品搜索栏 -->
+      <div class="sd-search-bar">
+        <input type="text" id="product-search-buyer" class="form-input sd-search-input" placeholder="搜索商品名称、品类、描述..." oninput="productDiscovery.search(this.value)">
+      </div>
+      <!-- 商品筛选区 -->
+      <div class="sd-filters" id="product-filters">
+        <div class="sd-filter-group">
+          <select class="form-select sd-filter-select" id="product-filter-category" onchange="productDiscovery.setFilter('category', this.value)">
+            <option value="">全部品类</option>
+            <option value="护肤">护肤</option>
+            <option value="彩妆">彩妆</option>
+            <option value="面膜">面膜</option>
+            <option value="精华">精华</option>
+            <option value="洗护">洗护</option>
+            <option value="防晒">防晒</option>
+            <option value="香氛">香氛</option>
+            <option value="身体护理">身体护理</option>
+            <option value="个护">个护</option>
+          </select>
+        </div>
+        <div class="sd-filter-group">
+          <button class="sd-filter-btn" id="pfilter-sample" onclick="productDiscovery.toggleFilter('sample')">🧪 可取样</button>
+        </div>
+        <div class="sd-filter-group">
+          <button class="sd-filter-btn" id="pfilter-custom" onclick="productDiscovery.toggleFilter('custom')">🔧 可定制</button>
+        </div>
+      </div>
+      <!-- 商品列表 -->
+      <div id="products-discovery-list"></div>
+    </div>
   </div>
 
   <!-- ===== 供应商详情主页 ===== -->
@@ -631,12 +673,24 @@
 </div>
 
 <!-- JS -->
-<script src="js/config.js?v=5"></script>
-<script src="js/app.js?v=3"></script>
-<script src="js/inquiries.js?v=2"></script>
+<script src="js/config.js?v=6"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/inquiries.js?v=3"></script>
 <script src="js/quotes.js?v=2"></script>
+<!-- ===== 商品详情弹窗 ===== -->
+<div id="product-detail-modal" class="modal-overlay" onclick="if(event.target===this)hideModal('product-detail-modal')">
+  <div class="modal-content" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title">商品详情</div>
+      <button class="modal-close" onclick="hideModal('product-detail-modal')">✕</button>
+    </div>
+    <div id="product-detail-content" style="max-height:70vh;overflow-y:auto;padding:16px;"></div>
+  </div>
+</div>
+
 <script src="js/orders.js?v=2"></script>
-<script src="js/suppliers.js?v=3"></script>
+<script src="js/suppliers.js?v=4"></script>
+<script src="js/product-discovery.js?v=2"></script>
 <script src="js/admin.js?v=2"></script>
 <script src="js/profile.js?v=2"></script>
 
