@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const platform = detectPlatform();
   document.body.dataset.platform = platform;
   console.log('[App] Platform:', platform);
+  // 确保初始状态：只有 dashboard 页面可见
+  document.querySelectorAll('.page').forEach(p => {
+    if (p.id !== 'page-dashboard') p.classList.remove('active');
+  });
   checkSession();
   bindEvents();
 });
@@ -472,10 +476,17 @@ function showApp() {
 }
 
 function switchPage(page) {
-  // 切换页面
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // 切换页面 - 先强制隐藏所有页面
+  const allPages = document.querySelectorAll('.page');
+  allPages.forEach(p => p.classList.remove('active'));
+
+  // 确保目标页面显示
   const target = document.getElementById('page-' + page);
-  if (target) target.classList.add('active');
+  if (target) {
+    // 强制触发重绘以确保 CSS display 生效
+    target.style.display = '';
+    target.classList.add('active');
+  }
 
   // 切换 tab 高亮
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
