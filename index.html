@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>异采 · 品牌方端</title>
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 
@@ -120,6 +120,36 @@
         已有账号？<a onclick="toggleAuthForm('login-individual');">返回登录</a>
       </div>
     </form>
+  </div>
+
+  <!-- 演示模式入口 -->
+  <div id="demo-entry" class="login-card" style="background:transparent;box-shadow:none;padding:8px 0;text-align:center;">
+    <a href="javascript:void(0)" onclick="showDemoPanel()" style="color:var(--primary);font-size:14px;text-decoration:none;opacity:0.85;transition:opacity .2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">🎭 演示模式体验</a>
+  </div>
+
+  <!-- 演示模式面板 -->
+  <div id="demo-panel" class="login-card" style="display:none;">
+    <div class="login-back" onclick="hideDemoPanel()">← 返回登录</div>
+    <h3 style="margin-bottom:4px;">🎭 演示模式</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">选择一个演示账号，快速体验系统功能</p>
+
+    <div class="demo-role-label">品牌方</div>
+    <div class="demo-card" onclick="demoLogin('company', 'demo_buyer@yicai.demo', 'Demo@2026')">
+      <div class="demo-card-left">
+        <span class="demo-role-tag" style="background:var(--primary);color:#fff;">品牌方演示</span>
+        <span class="demo-email">demo_buyer@yicai.demo</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();demoLogin('company', 'demo_buyer@yicai.demo', 'Demo@2026')">一键登录</button>
+    </div>
+
+    <div class="demo-role-label" style="margin-top:12px;">供应商</div>
+    <div class="demo-card" onclick="demoLogin('company', 'demo_gz@yicai.demo', 'Demo@2026')">
+      <div class="demo-card-left">
+        <span class="demo-role-tag" style="background:var(--accent,#ff6b35);color:#fff;">供应商演示</span>
+        <span class="demo-email">demo_gz@yicai.demo</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();demoLogin('company', 'demo_gz@yicai.demo', 'Demo@2026')">一键登录</button>
+    </div>
   </div>
 </div>
 
@@ -733,6 +763,44 @@
 <script src="js/my-suppliers.js?v=1"></script>
 <script src="js/admin.js?v=2"></script>
 <script src="js/profile.js?v=2"></script>
+<script>
+// ===== 演示模式功能 =====
+function showDemoPanel() {
+  // 隐藏所有登录步骤和入口
+  document.getElementById('login-step-choice').style.display = 'none';
+  document.getElementById('login-step-company').style.display = 'none';
+  document.getElementById('login-step-individual').style.display = 'none';
+  document.getElementById('demo-entry').style.display = 'none';
+  document.getElementById('demo-panel').style.display = 'block';
+}
+
+function hideDemoPanel() {
+  document.getElementById('demo-panel').style.display = 'none';
+  document.getElementById('login-step-choice').style.display = 'block';
+  document.getElementById('demo-entry').style.display = 'block';
+}
+
+function demoLogin(type, email, password) {
+  // 切换到企业登录表单视图
+  document.getElementById('demo-panel').style.display = 'none';
+  document.getElementById('login-step-choice').style.display = 'none';
+  document.getElementById('login-step-company').style.display = 'block';
+  document.getElementById('demo-entry').style.display = 'block';
+
+  // 确保是企业登录表单（不是注册）
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-company-form').style.display = 'none';
+
+  // 填入凭据
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-password').value = password;
+
+  // 触发登录
+  setTimeout(() => {
+    document.getElementById('login-form').dispatchEvent(new Event('submit', { bubbles: true }));
+  }, 200);
+}
+</script>
 
 </body>
 </html>
