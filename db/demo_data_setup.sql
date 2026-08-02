@@ -335,17 +335,21 @@ BEGIN
   -- ============================================
   -- 8. 为供应商创建一些收到的询盘（inquiries表，供应商侧）
   -- ============================================
-  INSERT INTO inquiries (supplier_id, buyer_company_name, buyer_contact_name, buyer_contact_email, title, category, description, quantity, status, created_at)
-  SELECT v_supplier_ids[1], '星辰美妆', '林经理', 'demo_buyer@yicai.demo',
-    '氨基酸洁面乳OEM合作', '护肤',
-    '希望合作开发一款氨基酸洁面乳，目标零售价39.9元/120ml，需要定制配方和包装设计。',
-    3000, 'open', CURRENT_DATE - INTERVAL '3 days';
+  BEGIN
+    INSERT INTO inquiries (supplier_id, buyer_company_name, buyer_contact_name, buyer_contact_email, title, category, description, quantity, status, created_at)
+    SELECT v_supplier_ids[1], '星辰美妆', '林经理', 'demo_buyer@yicai.demo',
+      '氨基酸洁面乳OEM合作', '护肤',
+      '希望合作开发一款氨基酸洁面乳，目标零售价39.9元/120ml，需要定制配方和包装设计。',
+      3000, 'open', CURRENT_DATE - INTERVAL '3 days';
 
-  INSERT INTO inquiries (supplier_id, buyer_company_name, buyer_contact_name, buyer_contact_email, title, category, description, quantity, status, created_at)
-  SELECT v_supplier_ids[2], '星辰美妆', '林经理', 'demo_buyer@yicai.demo',
-    '国潮口红定制', '彩妆',
-    '希望定制一款中国风口红，色号参考海棠红，需要定制包装（磁吸管+蜀绣纹理）。',
-    2000, 'quoted', CURRENT_DATE - INTERVAL '5 days';
+    INSERT INTO inquiries (supplier_id, buyer_company_name, buyer_contact_name, buyer_contact_email, title, category, description, quantity, status, created_at)
+    SELECT v_supplier_ids[2], '星辰美妆', '林经理', 'demo_buyer@yicai.demo',
+      '国潮口红定制', '彩妆',
+      '希望定制一款中国风口红，色号参考海棠红，需要定制包装（磁吸管+蜀绣纹理）。',
+      2000, 'quoted', CURRENT_DATE - INTERVAL '5 days';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE '跳过供应商询盘创建（inquiries表结构不匹配）: %', SQLERRM;
+  END;
 
   -- ============================================
   -- 完成

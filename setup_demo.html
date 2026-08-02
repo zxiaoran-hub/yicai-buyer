@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>异采 · 演示数据初始化</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .container { background:white; border-radius:16px; padding:32px; max-width:520px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+  h1 { font-size:24px; margin-bottom:8px; color:#1a1a2e; }
+  .subtitle { color:#666; font-size:14px; margin-bottom:24px; }
+  .step { background:#f8f9fa; border-radius:12px; padding:16px; margin-bottom:16px; }
+  .step-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .step-num { width:28px; height:28px; border-radius:50%; background:#667eea; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; flex-shrink:0; }
+  .step-title { font-size:15px; font-weight:600; color:#333; }
+  .step-desc { font-size:13px; color:#666; margin-bottom:12px; line-height:1.5; }
+  .accounts { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .account-row { display:flex; align-items:center; gap:8px; background:white; border-radius:8px; padding:8px 12px; font-size:13px; }
+  .account-role { background:#667eea; color:white; padding:2px 8px; border-radius:10px; font-size:11px; white-space:nowrap; }
+  .account-email { color:#333; flex:1; font-family:monospace; }
+  .account-status { font-size:16px; }
+  .btn { width:100%; padding:14px; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(102,126,234,0.4); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-outline { background:white; color:#667eea; border:2px solid #667eea; margin-top:8px; }
+  .log { background:#1a1a2e; border-radius:10px; padding:16px; margin-top:16px; max-height:300px; overflow-y:auto; display:none; }
+  .log-line { font-family:monospace; font-size:12px; color:#a0a0a0; margin-bottom:4px; line-height:1.5; }
+  .log-line.success { color:#4caf50; }
+  .log-line.error { color:#f44336; }
+  .log-line.info { color:#64b5f6; }
+  .result { margin-top:16px; padding:16px; border-radius:10px; display:none; }
+  .result.success { background:#e8f5e9; border:1px solid #4caf50; }
+  .result.error { background:#fce4ec; border:1px solid #f44336; }
+  .result h3 { font-size:15px; margin-bottom:8px; }
+  .result p { font-size:13px; color:#555; line-height:1.6; }
+  .note { background:#fff3e0; border-radius:8px; padding:12px; margin-top:16px; font-size:12px; color:#e65100; line-height:1.5; }
+  .pwd { font-family:monospace; background:#f0f0f0; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎭 演示数据初始化</h1>
+  <p class="subtitle">一键创建演示账号并填充完整演示数据</p>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">将创建以下 4 个演示账号</div>
+    </div>
+    <div class="accounts">
+      <div class="account-row">
+        <span class="account-role">品牌方</span>
+        <span class="account-email">demo_buyer@yicai.demo</span>
+        <span class="account-status" id="s-buyer">⏳</span>
+      </div>
+      <div class="account-row">
+        <span class="account-role">供应商·广州</span>
+        <span class="account-email">demo_gz@yicai.demo</span>
+        <span class="account-status" id="s-s1">⏳</span>
+      </div>
+      <div class="account-row">
+        <span class="account-role">供应商·上海</span>
+        <span class="account-email">demo_sh@yicai.demo</span>
+        <span class="account-status" id="s-s2">⏳</span>
+      </div>
+      <div class="account-row">
+        <span class="account-role">供应商·杭州</span>
+        <span class="account-email">demo_hz@yicai.demo</span>
+        <span class="account-status" id="s-s3">⏳</span>
+      </div>
+    </div>
+    <p class="step-desc">统一密码：<span class="pwd">Demo@2026</span></p>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">填充演示数据</div>
+    </div>
+    <div class="step-desc">6家公司 · 6个供应商 · 26款商品 · 询价记录 · 收藏 · 供应商关系</div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-start" onclick="startSetup()">🚀 开始初始化</button>
+  <button class="btn btn-outline" id="btn-reset" style="display:none" onclick="startSetup(true)">🔄 清除并重建</button>
+
+  <div class="log" id="log"></div>
+  <div class="result" id="result"></div>
+
+  <div class="note">
+    ⚠️ 此操作需在 Supabase 已关闭「Confirm email」的前提下执行。<br>
+    如果账号已存在，会自动跳过创建，仅填充数据。<br>
+    重复执行会先清除旧演示数据再重建。
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://spb-m06skr4cysol4lwz.supabase.opentrust.net';
+const SUPABASE_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsInJlZiI6InNwYi1tMDZza3I0Y3lzb2w0bHd6IiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODUzNzcwNjIsImV4cCI6MjEwMDk1MzA2Mn0.2OO2jmTetq6vOE4xTRruNMXVUI89ATMIStpIl4ul3kI';
+const PASSWORD = 'Demo@2026';
+
+const DEMO_ACCOUNTS = [
+  { email: 'demo_buyer@yicai.demo', role: 'buyer', elId: 's-buyer' },
+  { email: 'demo_gz@yicai.demo', role: 'supplier1', elId: 's-s1' },
+  { email: 'demo_sh@yicai.demo', role: 'supplier2', elId: 's-s2' },
+  { email: 'demo_hz@yicai.demo', role: 'supplier3', elId: 's-s3' },
+];
+
+const logEl = document.getElementById('log');
+const resultEl = document.getElementById('result');
+
+function log(msg, type = '') {
+  logEl.style.display = 'block';
+  const line = document.createElement('div');
+  line.className = 'log-line' + (type ? ' ' + type : '');
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function signUp(email, password) {
+  const resp = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    // 账号可能已存在，尝试登录获取 user_id
+    if (data.msg && data.msg.includes('already')) {
+      log(`${email} 已存在，尝试登录获取UUID...`, 'info');
+      const loginResp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      if (loginResp.ok) {
+        const loginData = await loginResp.json();
+        return { user: loginData.user, existed: true };
+      }
+      // 如果密码不对，尝试用 admin 登录获取 user list
+      throw new Error(`账号已存在但无法登录: ${JSON.stringify(data)}`);
+    }
+    throw new Error(`注册失败: ${JSON.stringify(data)}`);
+  }
+  return { user: data.user, existed: false };
+}
+
+async function callRPC(userId1, userId2, userId3, userId4) {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/setup_demo_data`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      p_buyer_user_id: userId1,
+      p_supplier1_user_id: userId2,
+      p_supplier2_user_id: userId3,
+      p_supplier3_user_id: userId4
+    })
+  });
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`RPC 调用失败 (${resp.status}): ${errText}`);
+  }
+  return resp.json();
+}
+
+async function startSetup(isReset = false) {
+  const btn = document.getElementById('btn-start');
+  const resetBtn = document.getElementById('btn-reset');
+  btn.disabled = true;
+  btn.textContent = '⏳ 初始化中...';
+  resetBtn.style.display = 'none';
+  resultEl.style.display = 'none';
+  if (!isReset) logEl.innerHTML = '';
+
+  const userIds = {};
+  try {
+    // Step 1: 创建账号
+    log('=== 步骤1：创建演示账号 ===', 'info');
+    for (const account of DEMO_ACCOUNTS) {
+      try {
+        log(`创建 ${account.email}...`);
+        const result = await signUp(account.email, PASSWORD);
+        userIds[account.role] = result.user.id;
+        document.getElementById(account.elId).textContent = result.existed ? '✅(已有)' : '✅';
+        log(`${account.email} → UUID: ${result.user.id}`, 'success');
+      } catch (e) {
+        document.getElementById(account.elId).textContent = '❌';
+        log(`创建 ${account.email} 失败: ${e.message}`, 'error');
+        // 继续尝试下一个
+      }
+    }
+
+    // 检查是否有足够的 UUID
+    const buyerId = userIds.buyer;
+    const s1Id = userIds.supplier1;
+    const s2Id = userIds.supplier2;
+    const s3Id = userIds.supplier3;
+
+    if (!buyerId || !s1Id || !s2Id || !s3Id) {
+      const missing = [];
+      if (!buyerId) missing.push('demo_buyer@yicai.demo');
+      if (!s1Id) missing.push('demo_gz@yicai.demo');
+      if (!s2Id) missing.push('demo_sh@yicai.demo');
+      if (!s3Id) missing.push('demo_hz@yicai.demo');
+      throw new Error(`以下账号创建失败，无法继续: ${missing.join(', ')}`);
+    }
+
+    // Step 2: 调用 RPC 填充数据
+    log('=== 步骤2：填充演示数据 ===', 'info');
+    log('调用 setup_demo_data RPC...');
+    const rpcResult = await callRPC(buyerId, s1Id, s2Id, s3Id);
+    log(rpcResult, 'success');
+
+    // 完成
+    log('=== 初始化完成 ===', 'success');
+    resultEl.className = 'result success';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <h3>✅ 演示数据部署成功！</h3>
+      <p>
+        <b>品牌方演示账号：</b>demo_buyer@yicai.demo<br>
+        <b>供应商演示账号：</b>demo_gz@yicai.demo / demo_sh@yicai.demo / demo_hz@yicai.demo<br>
+        <b>统一密码：</b><span class="pwd">Demo@2026</span><br><br>
+        现在可以刷新品牌方端和供应商端，在登录页选择「演示模式」体验。
+      </p>
+    `;
+    resetBtn.style.display = 'block';
+
+  } catch (e) {
+    log(`错误: ${e.message}`, 'error');
+    resultEl.className = 'result error';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `<h3>❌ 初始化失败</h3><p>${e.message}</p>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🚀 开始初始化';
+}
+</script>
+</body>
+</html>
