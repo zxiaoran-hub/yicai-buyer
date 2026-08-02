@@ -174,7 +174,12 @@ async function callRPC(userId1, userId2, userId3, userId4) {
     const errText = await resp.text();
     throw new Error(`RPC 调用失败 (${resp.status}): ${errText}`);
   }
-  return resp.json();
+  const result = await resp.json();
+  // RPC v4 returns TEXT - check if it's an error message
+  if (typeof result === 'string' && (result.includes('错误:') || result.includes('阶段错误'))) {
+    throw new Error(`数据填充失败: ${result}`);
+  }
+  return result;
 }
 
 async function startSetup(isReset = false) {
