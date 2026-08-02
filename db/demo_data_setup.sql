@@ -33,7 +33,73 @@ DECLARE
   i INT;
 BEGIN
   -- ============================================
-  -- 0. 清理旧演示数据（按依赖顺序）
+  -- 0a. 确保依赖表存在
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS buyer_inquiries (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT,
+    created_by UUID NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT,
+    description TEXT,
+    quantity INTEGER,
+    target_price DECIMAL(12,2),
+    deadline DATE,
+    is_public BOOLEAN DEFAULT true,
+    status TEXT DEFAULT 'open',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS buyers (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID UNIQUE,
+    company_name TEXT NOT NULL,
+    short_name TEXT,
+    industry TEXT DEFAULT '',
+    brand_name TEXT DEFAULT '',
+    contact_name TEXT DEFAULT '',
+    contact_phone TEXT DEFAULT '',
+    contact_email TEXT DEFAULT '',
+    address TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    is_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS supplier_favorites (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    supplier_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, supplier_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS product_favorites (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, product_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS buyer_supplier_relations (
+    id BIGSERIAL PRIMARY KEY,
+    buyer_user_id UUID NOT NULL,
+    supplier_id UUID NOT NULL,
+    buyer_company_id BIGINT,
+    status TEXT DEFAULT 'potential',
+    tags TEXT[] DEFAULT '{}',
+    notes TEXT DEFAULT '',
+    source TEXT DEFAULT 'discovery',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(buyer_user_id, supplier_id)
+  );
+
+  -- ============================================
+  -- 0b. 清理旧演示数据（按依赖顺序）
   -- ============================================
   DELETE FROM buyer_supplier_relations WHERE buyer_user_id = p_buyer_user_id;
   DELETE FROM supplier_favorites WHERE user_id = p_buyer_user_id;
@@ -97,7 +163,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, featured_order, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[1], p_supplier1_user_id,
     '广州美肤化妆品有限公司', '广州美肤',
@@ -117,7 +182,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[2], p_supplier2_user_id,
     '上海丝芙瑞生物科技有限公司', '上海丝芙瑞',
@@ -137,7 +201,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, featured_order, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[3], p_supplier3_user_id,
     '杭州妍妆科技有限公司', '杭州妍妆',
@@ -157,7 +220,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[4],
     '山东瑞安日化集团', '山东瑞安',
@@ -177,7 +239,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[5],
     '福建清源生物科技有限公司', '福建清源',
@@ -197,7 +258,6 @@ BEGIN
     description, established_year, employee_count, factory_area,
     is_verified, is_featured, featured_order, rating,
     certifications, contact_name, contact_email,
-    main_products, moq_range, price_range
   ) VALUES (
     v_company_ids[6],
     '成都锦绣美妆有限公司', '成都锦绣',
