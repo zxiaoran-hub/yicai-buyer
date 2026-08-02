@@ -20,8 +20,12 @@ DECLARE
   v_cid BIGINT;
 BEGIN
   -- ============================================
-  -- 0a. 确保依赖表存在
+  -- 0a. 确保表和列存在
   -- ============================================
+  -- 确保 suppliers 表有 user_id 列
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='suppliers' AND column_name='user_id') THEN
+    ALTER TABLE suppliers ADD COLUMN user_id UUID;
+  END IF;
   CREATE TABLE IF NOT EXISTS buyer_inquiries (
     id BIGSERIAL PRIMARY KEY, company_id BIGINT, created_by UUID NOT NULL,
     title TEXT NOT NULL, category TEXT, description TEXT, quantity INTEGER,
