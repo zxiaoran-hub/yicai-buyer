@@ -202,12 +202,11 @@ const suppliers = {
       html += '</div>';
     }
 
-    // 全部供应商
-    if (regular.length > 0) {
-      if (featured.length > 0) {
-        html += '<div class="sd-section-header" style="margin-top:20px;"><span class="sd-section-title" style="font-size:14px;">全部供应商</span><span class="sd-section-count">' + regular.length + '</span></div>';
-      }
-      html += regular.map(item => this.renderCard(item, false)).join('');
+    // 全部供应商（包含精选）
+    const allSorted = [...featured, ...regular];
+    if (allSorted.length > 0) {
+      html += '<div class="sd-section-header" style="margin-top:20px;"><span class="sd-section-title" style="font-size:14px;">全部供应商</span><span class="sd-section-count">' + allSorted.length + '</span></div>';
+      html += allSorted.map(item => this.renderCard(item, item.is_featured === true)).join('');
     }
 
     // 加载更多按钮

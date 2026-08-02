@@ -46,26 +46,24 @@ const favorites = {
         return;
       }
 
-      // 批量获取商品详情
+      // 批量获取商品详情（使用 IN 查询）
       const productIds = favs.map(f => f.product_id);
-      const products = await supabase.query('products', {
-        select: 'id,name,category,images,price_min,price_max,price_unit,moq,sample_available,status,supplier_id',
-        filter: { id: productIds[0] },
-      });
-
-      // 用 IN 查询
       const allProducts = await supabase.query('products', {
         select: 'id,name,category,images,price_min,price_max,price_unit,moq,sample_available,status,supplier_id',
-      }).then(prods => prods.filter(p => productIds.includes(p.id)));
+        in: { id: productIds.join(',') }
+      });
 
-      // 获取供应商名称
+      // 获取供应商名称（使用 IN 查询）
       const supplierIds = [...new Set(allProducts.map(p => p.supplier_id).filter(Boolean))];
       let supplierMap = {};
       if (supplierIds.length) {
         const supps = await supabase.query('suppliers', {
-          select: 'id,company_name,region'
-        }).then(s => s.filter(sp => supplierIds.includes(sp.id)));
-        supplierMap = Object.fromEntries(supps.map(s => [s.id, s]));
+          select: 'id,company_name,region',
+          in: { id: supplierIds.join(',') }
+        });
+        if (Array.isArray(supps)) {
+          supplierMap = Object.fromEntries(supps.map(s => [s.id, s]));
+        }
       }
 
       // 按收藏顺序排列
@@ -118,8 +116,12 @@ const favorites = {
 
   viewProductDetail(productId) {
     if (typeof productDiscovery !== 'undefined') {
+      // 先切到发现页的商品Tab
       switchPage('suppliers');
-      setTimeout(() => productDiscovery.showProductDetail(productId), 100);
+      setTimeout(() => {
+        discoverySwitchTab('product');
+        setTimeout(() => productDiscovery.showDetail(productId), 200);
+      }, 100);
     }
   },
 
@@ -144,8 +146,9 @@ const favorites = {
 
       const supplierIds = favs.map(f => f.supplier_id);
       const allSuppliers = await supabase.query('suppliers', {
-        select: 'id,company_name,region,category,is_verified,rating,contact_name,contact_email'
-      }).then(s => s.filter(sp => supplierIds.includes(sp.id)));
+        select: 'id,company_name,region,category,is_verified,rating,contact_name,contact_email',
+        in: { id: supplierIds.join(',') }
+      });
 
       // 按收藏顺序排列
       const ordered = favs.map(f => allSuppliers.find(s => s.id === f.supplier_id)).filter(Boolean);
@@ -191,8 +194,8 @@ const favorites = {
   },
 
   viewSupplierDetail(supplierId) {
-    if (typeof suppliers !== 'undefined') {
-      suppliers.viewDetail(supplierId);
+    if (typeof suppliers !== 'undefined' && suppliers.showDetail) {
+      suppliers.showDetail(supplierId);
     }
   }
 };
