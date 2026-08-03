@@ -347,6 +347,9 @@ async function loadUserPermissions() {
       currentUser.roles = result.roles || [];
       currentUser.isPlatformAdmin = result.is_platform_admin || false;
       currentUser.isCompanyAdmin = result.is_company_admin || false;
+      
+      // 保存更新后的用户信息到 localStorage
+      localStorage.setItem('yicai_buyer_user', JSON.stringify(currentUser));
     } else {
       currentPermissions = [];
     }
