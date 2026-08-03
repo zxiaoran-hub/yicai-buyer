@@ -490,16 +490,25 @@ function showApp() {
 }
 
 function switchPage(page) {
+  console.log('[switchPage] === 开始切换页面:', page, '===');
+  
   // 切换页面 - 先强制隐藏所有页面
   const allPages = document.querySelectorAll('.page');
-  allPages.forEach(p => p.classList.remove('active'));
+  console.log('[switchPage] 找到', allPages.length, '个页面');
+  allPages.forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none'; // 强制隐藏
+  });
 
   // 确保目标页面显示
   const target = document.getElementById('page-' + page);
+  console.log('[switchPage] 目标页面元素:', target);
   if (target) {
-    // 强制触发重绘以确保 CSS display 生效
-    target.style.display = '';
     target.classList.add('active');
+    target.style.display = 'block'; // 强制显示
+    console.log('[switchPage] 目标页面已显示, display:', target.style.display);
+  } else {
+    console.error('[switchPage] ❌ 未找到目标页面: page-' + page);
   }
 
   // 切换 tab 高亮
@@ -507,29 +516,46 @@ function switchPage(page) {
   const activeTab = document.querySelector(`.tab-item[data-page="${page}"]`);
   if (activeTab) activeTab.classList.add('active');
 
-  // 加载对应数据
-  console.log('[switchPage] 切换到页面:', page);
-  console.log('[switchPage] typeof inquiries:', typeof inquiries);
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'inquiries') {
-    console.log('[switchPage] 准备调用 inquiries.load()');
-    if (typeof inquiries !== 'undefined') {
-      console.log('[switchPage] inquiries 存在，调用 load()');
-      inquiries.load().catch(err => console.error('[switchPage] inquiries.load() 失败:', err));
-    } else {
-      console.error('[switchPage] ❌ inquiries 未定义!');
+  // 加载对应数据 - 使用 setTimeout 确保页面已渲染
+  setTimeout(() => {
+    console.log('[switchPage] 开始加载数据...');
+    if (page === 'dashboard') {
+      console.log('[switchPage] 加载 dashboard');
+      loadDashboard();
     }
-  }
-  if (page === 'quotes' && typeof quotes !== 'undefined') quotes.load();
-  if (page === 'orders' && typeof orders !== 'undefined') orders.load();
+    if (page === 'inquiries') {
+      console.log('[switchPage] 加载 inquiries, typeof:', typeof inquiries);
+      if (typeof inquiries !== 'undefined' && inquiries.load) {
+        inquiries.load().catch(err => console.error('[switchPage] inquiries.load() 失败:', err));
+      } else {
+        console.error('[switchPage] ❌ inquiries 未定义或没有 load 方法!');
+      }
+    }
+    if (page === 'quotes') {
+      console.log('[switchPage] 加载 quotes, typeof:', typeof quotes);
+      if (typeof quotes !== 'undefined' && quotes.load) quotes.load();
+    }
+    if (page === 'orders') {
+      console.log('[switchPage] 加载 orders, typeof:', typeof orders);
+      if (typeof orders !== 'undefined' && orders.load) orders.load();
+    }
+    if (page === 'suppliers') {
+      console.log('[switchPage] 加载 suppliers, typeof:', typeof suppliers);
+      if (typeof suppliers !== 'undefined' && suppliers.load) suppliers.load();
+    }
+    if (page === 'favorites') {
+      console.log('[switchPage] 加载 favorites');
+      if (typeof favorites !== 'undefined' && favorites.init) favorites.init();
+    }
+    if (page === 'my-suppliers') {
+      console.log('[switchPage] 加载 my-suppliers');
+      if (typeof mySuppliers !== 'undefined' && mySuppliers.init) mySuppliers.init();
+    }
+  }, 50);
   
   // 隐藏供应商详情页
   const supplierDetailPage = document.getElementById('page-supplier-detail');
   if (supplierDetailPage) supplierDetailPage.classList.remove('active');
-
-  if (page === 'suppliers' && typeof suppliers !== 'undefined') suppliers.load();
-  if (page === 'favorites' && typeof favorites !== 'undefined') favorites.init();
-  if (page === 'my-suppliers' && typeof mySuppliers !== 'undefined') mySuppliers.init();
 }
 
 // ==================== 数据加载 ====================
