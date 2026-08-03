@@ -17,7 +17,14 @@ const inquiries = {
   },
 
   async render(filter) {
+    console.log('[Inquiries] render 开始, filter:', filter);
+    console.log('[Inquiries] currentUser:', currentUser);
     const container = document.getElementById('inquiries-list');
+    console.log('[Inquiries] container:', container);
+    if (!container) {
+      console.error('[Inquiries] ❌ container 不存在!');
+      return;
+    }
     container.innerHTML = '<div class="text-center" style="padding:20px;color:var(--text-secondary);">加载中...</div>';
 
     try {

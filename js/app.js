@@ -508,8 +508,18 @@ function switchPage(page) {
   if (activeTab) activeTab.classList.add('active');
 
   // 加载对应数据
+  console.log('[switchPage] 切换到页面:', page);
+  console.log('[switchPage] typeof inquiries:', typeof inquiries);
   if (page === 'dashboard') loadDashboard();
-  if (page === 'inquiries' && typeof inquiries !== 'undefined') inquiries.load();
+  if (page === 'inquiries') {
+    console.log('[switchPage] 准备调用 inquiries.load()');
+    if (typeof inquiries !== 'undefined') {
+      console.log('[switchPage] inquiries 存在，调用 load()');
+      inquiries.load().catch(err => console.error('[switchPage] inquiries.load() 失败:', err));
+    } else {
+      console.error('[switchPage] ❌ inquiries 未定义!');
+    }
+  }
   if (page === 'quotes' && typeof quotes !== 'undefined') quotes.load();
   if (page === 'orders' && typeof orders !== 'undefined') orders.load();
   
