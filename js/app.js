@@ -7,6 +7,16 @@ let currentPermissions = [];
 let currentMenuPermissions = {};
 let currentButtonPermissions = {};
 
+// appState 兼容层 - 供 orders.js/quotes.js/admin.js/profile.js 使用
+window.appState = {
+  get companyId() { return currentUser?.companyId || null; },
+  get user() { return currentUser; },
+  get roles() { return currentUser?.roles || []; },
+  get isPlatformAdmin() { return currentUser?.isPlatformAdmin || false; },
+  get isCompanyAdmin() { return currentUser?.isCompanyAdmin || false; },
+  get isIndividual() { return !currentUser?.companyId; }
+};
+
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[App] DOMContentLoaded - app.js loaded');
@@ -319,7 +329,7 @@ function detectPlatform() {
 // ==================== 权限加载 ====================
 async function loadUserPermissions() {
   try {
-    const result = await supabase.rpc('get_user_permissions');
+    const result = await supabase.rpc('get_user_permissions', { p_user_id: currentUser.id });
 
     if (result && result.permissions) {
       // 检测当前平台
@@ -336,6 +346,7 @@ async function loadUserPermissions() {
       currentUser.companyName = result.company_name;
       currentUser.roles = result.roles || [];
       currentUser.isPlatformAdmin = result.is_platform_admin || false;
+      currentUser.isCompanyAdmin = result.is_company_admin || false;
     } else {
       currentPermissions = [];
     }
