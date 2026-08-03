@@ -509,6 +509,10 @@ function switchPage(page) {
 
   // 加载对应数据
   if (page === 'dashboard') loadDashboard();
+  if (page === 'inquiries' && typeof inquiries !== 'undefined') inquiries.load();
+  if (page === 'quotes' && typeof quotes !== 'undefined') quotes.load();
+  if (page === 'orders' && typeof orders !== 'undefined') orders.load();
+  
   // 隐藏供应商详情页
   const supplierDetailPage = document.getElementById('page-supplier-detail');
   if (supplierDetailPage) supplierDetailPage.classList.remove('active');
@@ -526,12 +530,14 @@ async function loadDashboard() {
   const statSuppliers = document.getElementById('stat-suppliers');
 
   try {
-    const countI = await supabase.getCount('inquiries', { buyer_id: currentUser?.id });
+    const filter = currentUser?.companyId ? { company_id: currentUser.companyId } : { created_by: currentUser?.id };
+    const countI = await supabase.getCount('buyer_inquiries', filter);
     if (statInquiries) statInquiries.textContent = countI;
   } catch { if (statInquiries) statInquiries.textContent = '0'; }
 
   try {
-    const countO = await supabase.getCount('orders', { buyer_id: currentUser?.id });
+    const filter = currentUser?.companyId ? { company_id: currentUser.companyId } : { buyer_user_id: currentUser?.id };
+    const countO = await supabase.getCount('buyer_orders', filter);
     if (statOrders) statOrders.textContent = countO;
   } catch { if (statOrders) statOrders.textContent = '0'; }
 
